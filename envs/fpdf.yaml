@@ -1,0 +1,7 @@
+name: fpdf
+channels:
+  - travis
+  - conda-forge
+dependencies:
+  - fpdf=1.7
+  - biopython=1.78

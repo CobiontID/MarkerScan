@@ -1,0 +1,8 @@
+name: sina
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - boost-cpp
+  - sina=1.7.0
+  - blast
