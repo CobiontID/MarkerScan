@@ -6,6 +6,7 @@ Please copy:
 1. all scripts for the directory /scripts
 2. all yaml containing information regarding external programs required to be downloaded by conda in /envs 
 3. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm 
+
 to your location of choice.
 
 To run the pipeline a yaml file containing all external parameters, an example is shown below.
