@@ -1,5 +1,5 @@
 # Marker_pipeline
-This repository contains the Snakemake pipeline which determines species composition of sample by SSU presence and seperates them accordingly. 
+This repository contains a Snakemake pipeline which determines the species composition of the sample by SSU presence and seperates them accordingly. 
 
 ## Required input
 Please copy all scripts for the directory /scripts, all yaml containing information regarding external programs required to be downloaded by conda in /envs 
