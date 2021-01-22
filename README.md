@@ -9,7 +9,7 @@ Please copy:
 
 to your location of choice.
 
-To run the pipeline a yaml file containing all external parameters, an example is shown below.
+To run the pipeline a yaml file containing all external parameters is needed, an example is shown below.
 
 ```
 reads: /lustre/scratch116/tol/projects/darwin/sub_projects/cobiont_detection/pipeline/hmm_pipeline/readfiles/ilBlaLact1fasta.gz
