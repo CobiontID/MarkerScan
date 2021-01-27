@@ -26,62 +26,61 @@ rule all:
 		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"])
 
 rule HMMscan_SSU:
-    """
-    Run HMMscan with prokaryotic+viral HMM (RF00177+RF01959)
-    """
-    output:
-        dom = "{workingdirectory}/{shortname}.ProkSSU.domout",
-		logfile = "{workingdirectory}/{shortname}.HMMscan.log"
+	"""
+	Run HMMscan with prokaryotic+viral HMM (RF00177+RF01959)
+	"""
+	output:
+		dom = "{workingdirectory}/{shortname}.ProkSSU.domout", 
+		log = "{workingdirectory}/{shortname}.HMMscan.log"
+	threads: 10
 	conda: "{envsdir}/hmmer.yaml"
-	threads: 30
-        shell:
-            """
-            nhmmer --cpu {threads} --noali --tblout {output.dom} -o {output.logfile} {SSUHMMfile} {genome}
-            """
+	shell:
+		"""
+		nhmmer --cpu {threads} --noali --tblout {output.dom} -o {output.log} {SSUHMMfile} {genome}
+		"""
 
 rule FetchHMMReads:
-    """
-    Fetch detected reads with prokaryotic 16S signature
-    """
-    input:
-        dom = "{workingdirectory}/{shortname}.ProkSSU.domout"
-    output:
-        readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
+	"""
+	Fetch detected reads with prokaryotic 16S signature
+	"""
+	input:
+		dom = "{workingdirectory}/{shortname}.ProkSSU.domout"
+	output:
+		readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
 		readsinfomicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readsinfo",
-        readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
+		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
 		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
-    shell:
-        """
-        python {scriptdir}/GetReadsSSU_nhmmer.py -i {input.dom} | grep -v 'RF02542.afa' > {output.readsinfo} || true
+	shell:
+		"""
+		python {scriptdir}/GetReadsSSU_nhmmer.py -i {input.dom} | grep -v 'RF02542.afa' > {output.readsinfo} || true
 		python {scriptdir}/GetReadsSSU_nhmmer.py -i {input.dom} | grep 'RF02542.afa' > {output.readsinfomicro} || true
 		cut -f1 {output.readsinfo} > {output.readslist}
 		cut -f1 {output.readsinfomicro} > {output.readslistmicro}
-        """
+		"""
 
 rule Fetch16SLoci:
-    """
-    Get fasta sequences for detected reads with prokaryotic 16S signature and extract 16S locus
-    """
-    input:
-        readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
-        readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
+	"""
+	Get fasta sequences for detected reads with prokaryotic 16S signature and extract 16S locus
+	"""
+	input:
+		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
+		readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
 		readsinfomicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readsinfo",
 		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
-    output:
-        fasta16S = "{workingdirectory}/{shortname}.ProkSSU.reads.fa",
-        fasta16SLoci = "{workingdirectory}/{shortname}.ProkSSU.fa",
-        fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
+	output:
+		fasta16S = "{workingdirectory}/{shortname}.ProkSSU.reads.fa",
+		fasta16SLoci = "{workingdirectory}/{shortname}.ProkSSU.fa",
+		fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
 		fasta16Smicro = "{workingdirectory}/{shortname}.ProkSSU.reads.microsporidia.fa",
 		fasta16SLocimicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.fa",
 		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa"
-    log:
-        "{workingdirectory}/{shortname}.cdhit.log"
-    conda:	"{envsdir}/cdhit.yaml"
+	log: "{workingdirectory}/{shortname}.cdhit.log"
+	conda:	"{envsdir}/cdhit.yaml"
 	shell:
-        """
-        seqtk subseq {genome} {input.readslist} > {output.fasta16S}
-        python {scriptdir}/FetchSSUReads.py -i {input.readsinfo} -f {output.fasta16S} -o {output.fasta16SLoci}
-        cd-hit-est -i {output.fasta16SLoci} -o {output.fasta16SLociReduced} -c 0.99 -T 1 -G 0 -aS 1 2> {log}
+		"""
+		seqtk subseq {genome} {input.readslist} > {output.fasta16S}
+		python {scriptdir}/FetchSSUReads.py -i {input.readsinfo} -f {output.fasta16S} -o {output.fasta16SLoci}
+		cd-hit-est -i {output.fasta16SLoci} -o {output.fasta16SLociReduced} -c 0.99 -T 1 -G 0 -aS 1 2> {log}
 		if [ -s {input.readslistmicro} ]; then
 			seqtk subseq {genome} {input.readslistmicro} > {output.fasta16Smicro}
 			python {scriptdir}/FetchSSUReads.py -i {input.readsinfomicro} -f {output.fasta16Smicro} -o {output.fasta16SLocimicro}
@@ -106,14 +105,14 @@ rule DownloadSILVA:
 		filename=$(basename $var .md5)
 		filenameshort=$(basename $filename .gz)
 		if [ -f {datadir}/silva/SILVA_SSURef.arb ]; then
-		        if [ {datadir}/silva/$var -nt {datadir}/silva/SILVA_SSURef.arb ]; then
-		                curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
-                		gunzip {datadir}/silva/$filename
+			if [ {datadir}/silva/$var -nt {datadir}/silva/SILVA_SSURef.arb ]; then
+				curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
+				gunzip {datadir}/silva/$filename
 				mv {datadir}/silva/$filenameshort {datadir}/silva/SILVA_SSURef.arb
-        		fi
+			fi
 		else
-		        curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
-		        gunzip {datadir}/silva/$filename
+			curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
+			gunzip {datadir}/silva/$filename
 			mv {datadir}/silva/$filenameshort {datadir}/silva/SILVA_SSURef.arb
 		fi
 		touch {output.donesilva}
@@ -229,10 +228,10 @@ checkpoint GetGenera:
 			echo "Eukaryota" > {output.generadir}/genus.$p.txt
 		done < {output.generadir}/euk.SSU.genera_taxonomy.txt
 		while read p
-                do
+		do
 			echo "Bacteria/Archaea" > {output.generadir}/genus.$p.txt
 			#touch  {output.generadir}/genus.$p.txt
-                done < {output.generadir}/prok.SSU.genera_taxonomy.txt
+		done < {output.generadir}/prok.SSU.genera_taxonomy.txt
 		rm {output.generadir}/euk.SSU.genera_taxonomy.txt
 		rm {output.generadir}/prok.SSU.genera_taxonomy.txt
 		"""
@@ -262,7 +261,7 @@ rule DownloadRefSeqGenus:
 			if [ $before -ge $timestampdate ]; then
 				rm -r {datadir}/genera/{params.taxname}
 				if grep -q Eukaryota {input.generafiles}; then
-				        python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				else
 					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				fi
@@ -327,7 +326,7 @@ rule DownloadGenusRel:
 
 rule CreateKrakenDB:
 	"""
-        Create Kraken DB for all downloaded refseq genomes
+	Create Kraken DB for all downloaded refseq genomes
 	"""
 	input:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
@@ -406,7 +405,8 @@ rule Map2Assembly:
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
 		grep -v 'NOT COMPLETE' {output.mapping} | cut -f1 | sort | uniq > {output.contiglist} || true
 		seqtk subseq {genome} {output.contiglist} > {output.fasta}
-                """
+		"""
+
 rule RunBusco:
 	"""
 	Detect number of BUSCO genes per contig
@@ -436,7 +436,7 @@ rule RunBusco:
 			touch {output.buscoini}
 		fi
 		touch {output.completed}
-        """
+		"""
 
 rule ClusterBusco:
 	"""
@@ -472,28 +472,28 @@ rule ClusterBusco:
 		"""
 		
 def aggregate_assemblies(wildcards):
-        checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
-        return expand ("{workingdirectory}/{genus}/{genus}.finalassembly.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
+	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/{genus}/{genus}.finalassembly.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
 
 rule concatenate_asm:
-    input:
-        aggregate_assemblies
-    output:
-        "{workingdirectory}/final_assembly.fa"
-    shell:
-        "cat {input} > {output}"
+	input:
+		aggregate_assemblies
+	output:
+		"{workingdirectory}/final_assembly.fa"
+	shell:
+		"cat {input} > {output}"
 
 def aggregate_readsets(wildcards):
-        checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
-        return expand ("{workingdirectory}/{genus}/{genus}.final_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
+	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/{genus}/{genus}.final_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
 
 rule concatenate_reads:
-    input:
-        aggregate_readsets
-    output:
-        "{workingdirectory}/final_reads_removal.fa"
-    shell:
-        "cat {input} > {output}"
+	input:
+		aggregate_readsets
+	output:
+		"{workingdirectory}/final_reads_removal.fa"
+	shell:
+		"cat {input} > {output}"
 rule create_report:
 	input:
 		finalrem = "{workingdirectory}/final_reads_removal.fa"
