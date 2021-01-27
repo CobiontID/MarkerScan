@@ -29,7 +29,7 @@ rule HMMscan_SSU:
     """
     Run HMMscan with prokaryotic+viral HMM (RF00177+RF01959)
     """
-     output:
+    output:
         dom = "{workingdirectory}/{shortname}.ProkSSU.domout",
 		log = "{workingdirectory}/{shortname}.HMMscan.log"
 	conda: "{envsdir}/hmmer.yaml"
@@ -476,24 +476,24 @@ def aggregate_assemblies(wildcards):
         return expand ("{workingdirectory}/{genus}/{genus}.finalassembly.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
 
 rule concatenate_asm:
-        input:
-                aggregate_assemblies
-        output:
-                "{workingdirectory}/final_assembly.fa"
-        shell:
-                "cat {input} > {output}"
+    input:
+        aggregate_assemblies
+    output:
+        "{workingdirectory}/final_assembly.fa"
+    shell:
+        "cat {input} > {output}"
 
 def aggregate_readsets(wildcards):
         checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
         return expand ("{workingdirectory}/{genus}/{genus}.final_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
 
 rule concatenate_reads:
-        input:
-                aggregate_readsets
-        output:
-                "{workingdirectory}/final_reads_removal.fa"
-        shell:
-                "cat {input} > {output}"
+    input:
+        aggregate_readsets
+    output:
+        "{workingdirectory}/final_reads_removal.fa"
+    shell:
+        "cat {input} > {output}"
 rule create_report:
 	input:
 		finalrem = "{workingdirectory}/final_reads_removal.fa"
