@@ -10,7 +10,7 @@ Basic usage:
 scriptdir = config["scriptdir"]
 reads = config["reads"]
 datadir = config["datadir"]
-envsdir = config["envsdir"]
+#envsdir = config["envsdir"]
 sciname_goi = config["sci_name"]
 SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
@@ -33,7 +33,7 @@ rule HMMscan_SSU:
 		dom = "{workingdirectory}/{shortname}.ProkSSU.domout", 
 		log = "{workingdirectory}/{shortname}.HMMscan.log"
 	threads: 10
-	conda: "{envsdir}/hmmer.yaml"
+	conda: "envs/hmmer.yaml"
 	shell:
 		"""
 		nhmmer --cpu {threads} --noali --tblout {output.dom} -o {output.log} {SSUHMMfile} {genome}
@@ -75,7 +75,7 @@ rule Fetch16SLoci:
 		fasta16SLocimicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.fa",
 		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa"
 	log: "{workingdirectory}/{shortname}.cdhit.log"
-	conda:	"{envsdir}/cdhit.yaml"
+	conda:	"envs/cdhit.yaml"
 	shell:
 		"""
 		seqtk subseq {genome} {input.readslist} > {output.fasta16S}
@@ -187,7 +187,7 @@ rule ClassifySSU:
 		blastout = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt",
 		blastgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.genus.txt",
 		SILVA16Sgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.genus.txt"
-	conda: "{envsdir}/sina.yaml"
+	conda: "envs/sina.yaml"
 	threads: 10
 	shell:
 		"""
@@ -335,8 +335,7 @@ rule CreateKrakenDB:
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
 	threads: 10
-	conda:
-		"{envsdir}/kraken.yaml"
+	conda: "envs/kraken.yaml"
 	shell:
 		"""
 		mkdir {output.krakendb}
@@ -357,7 +356,7 @@ rule RunKraken:
 		krakenout = "{workingdirectory}/kraken.output",
 		krakenreport = "{workingdirectory}/kraken.report"
 	threads: 10
-	conda: "{envsdir}/kraken.yaml"
+	conda: "envs/kraken.yaml"
 	shell:
 		"""
 		if [[ {reads} == *gz ]] 
@@ -381,7 +380,7 @@ rule ExtractReadsKraken:
 	output:
 		krakenreads = "{workingdirectory}/{genus}/kraken.reads",
 		krakenfa = "{workingdirectory}/{genus}/kraken.fa"
-	conda: "{envsdir}/seqtk.yaml"
+	conda: "envs/seqtk.yaml"
 	shell:
 		"""
 		python {scriptdir}/KrakenReadsPerGenus.py -i {input.krakenout} -rep {input.krakenreport} -g {input.generafiles} -r {output.krakenreads}
@@ -398,7 +397,7 @@ rule Map2Assembly:
 		reads = "{workingdirectory}/{genus}/{genus}.reads",
 		fasta = "{workingdirectory}/{genus}/{genus}.ctgs.fa"
 	threads: 10
-	conda: "{envsdir}/minimap.yaml"
+	conda: "envs/minimap.yaml"
 	shell:
 		"""
 		minimap2 -x map-pb -t {threads} {genome} {input.krakenfa}  > {output.paffile}
@@ -422,7 +421,7 @@ rule RunBusco:
 		buscoini = "{workingdirectory}/{genus}/config_busco.ini",
 		#proteins = "{workingdirectory}/{genus}/busco/busco/prodigal_output/predicted_genes/predicted.faa",
 		completed = "{workingdirectory}/{genus}/busco/done.txt"
-	conda: "{envsdir}/busco.yaml"
+	conda: "envs/busco.yaml"
 	threads:
 		10
 	shell:
@@ -454,7 +453,7 @@ rule ClusterBusco:
 		contigsid = "{workingdirectory}/{genus}/{genus}.ids.txt",
 		readids = "{workingdirectory}/{genus}/{genus}.readsids.txt",
 		finalreads = "{workingdirectory}/{genus}/{genus}.final_reads.fa",
-	conda: "{envsdir}/seqtk.yaml"
+	conda: "envs/seqtk.yaml"
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
@@ -499,7 +498,7 @@ rule create_report:
 		finalrem = "{workingdirectory}/final_reads_removal.fa"
 	output:
 		rep = "{workingdirectory}/{shortname}.report.pdf"
-	conda: "{envsdir}/fpdf.yaml"
+	conda: "envs/fpdf.yaml"
 	shell:
 		"""
 		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem}
