@@ -1,6 +1,7 @@
 from __future__ import division
 import argparse
 import configparser
+import json
 import os
 import sys
 
@@ -29,8 +30,12 @@ def readNames(names_tax_file):
         for line in nodes_tax:
             node = [field.strip() for field in line.split('|')]
             if 'scientific' in line or 'synonym' in line:
-                tax_names[node[1]] = node[0]
-                tax_names_reverse[node[0]] = node[1]
+                if 'synonym' in line and 'Bacteria' == node[1]:
+                    #aparantly there exists as class of walking sticks called Bacteria Latreilla (629395), that have as synonym name Bacteria
+                    print('wrong Bacteria')
+                else:
+                    tax_names[node[1]] = node[0]
+                    tax_names_reverse[node[0]] = node[1]
     return tax_names_reverse,tax_names
 
 '''
@@ -150,6 +155,7 @@ print(spoifamily+'\t'+spoiclade)
 
 k=open(args.tax,'r')
 for line in k:
+    line=line.strip()
     sciname=line.split(';')[-2]
     if 'environmental' in sciname:
         sciname=line.split(';')[-3]
@@ -164,21 +170,66 @@ for line in k:
         if taxtypes[namestax[sciname]] == args.type:
             print('FAMILY:'+sciname+' CLADE:'+cladelevelname)
             taxlevelname=sciname
-            if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                eukgens.append(taxlevelname)
-            elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                prokgens.append(taxlevelname)
-        elif lineage[namestax[sciname]] != None:
-            print('LOWER THAN FAMILY:'+sciname)
-            taxlevelname=taxnames[lineage[namestax[sciname]][-1]]
-            #print(taxlevelname)
-            #print(fulllineage)
-            if int(lineage[namestax[sciname]][-1]) != 1:
-            #if taxtypes[namestax[sciname]] == args.type:
+            if 'Eukaryota' == rootlevelname:
+                cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+            else:
+                cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+            os.system(cmd)
+            foundlevel = False
+            with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
+                distros_dict = json.load(f)
+                if distros_dict:
+                    i=0
+                    for distro in distros_dict["datasets"]:
+                        i=i+1
+                    if i > 1:
+                        foundlevel = True
+            f.close()
+            if  foundlevel == True:
                 if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
                     eukgens.append(taxlevelname)
                 elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
                     prokgens.append(taxlevelname)
+            else:
+                print('No genomes in databases')
+                taxlevelname=cladelevelname
+                if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                    eukgens.append(taxlevelname)
+                elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                    prokgens.append(taxlevelname)
+        elif lineage[namestax[sciname]] != None:
+            print('DIFFERENT THAN FAMILY:'+sciname+ ' CLADE:'+cladelevelname)
+            taxlevelname=taxnames[lineage[namestax[sciname]][-1]]
+            if int(lineage[namestax[sciname]][-1]) != 1:
+                if 'Eukaryota' == rootlevelname:
+                    cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                else:
+                    cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                os.system(cmd)
+                foundlevel = False
+                with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
+                    distros_dict = json.load(f)
+                    if distros_dict:
+                        i=0
+                        for distro in distros_dict["datasets"]:
+                            i=i+1
+                        if i > 1:
+                            foundlevel = True
+                f.close()
+                if  foundlevel == True:
+                #if taxtypes[namestax[sciname]] == args.type:
+                    if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                        eukgens.append(taxlevelname)
+                    elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                        prokgens.append(taxlevelname)
+                else:
+                    print('No genomes in databases')
+                    if cladelevelname != 'root':
+                        taxlevelname=cladelevelname
+                        if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                            eukgens.append(taxlevelname)
+                        elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                            prokgens.append(taxlevelname)    
 
 file1=args.outdir+"/prok."+args.suffix
 k=open(file1,'w')
