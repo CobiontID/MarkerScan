@@ -31,12 +31,12 @@ rule HMMscan_SSU:
     """
     output:
         dom = "{workingdirectory}/{shortname}.ProkSSU.domout",
-		log = "{workingdirectory}/{shortname}.HMMscan.log"
+		logfile = "{workingdirectory}/{shortname}.HMMscan.log"
 	conda: "{envsdir}/hmmer.yaml"
 	threads: 30
         shell:
             """
-            nhmmer --cpu {threads} --noali --tblout {output.dom} -o {output.log} {SSUHMMfile} {genome}
+            nhmmer --cpu {threads} --noali --tblout {output.dom} -o {output.logfile} {SSUHMMfile} {genome}
             """
 
 rule FetchHMMReads:
