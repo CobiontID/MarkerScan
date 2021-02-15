@@ -118,12 +118,62 @@ rule DownloadSILVA:
 		touch {output.donesilva}
 		"""
 
+rule DownloadOrganelles:
+	"""
+	Download gff flatfiles and fna of plastid and mitochondria from ftp release NCBI
+	"""
+	input:
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"])
+	output:
+		doneorganelles = "{workingdirectory}/organelles_download.done.txt"
+	conda:	"envs/cdhit.yaml"
+	shell:
+		"""
+		if [ -s {datadir}/organelles/organelles.lineage.txt ]; then
+        	before=$(date -d 'today - 30 days' +%s)
+        	timestamp=$(stat -c %y {datadir}/organelles/organelles.lineage.txt | cut -f1 -d ' ')
+        	timestampdate=$(date -d $timestamp +%s)
+        	if [ $before -ge $timestampdate ]; then
+                rm {datadir}/organelles/*
+				mt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
+				pt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
+				for file in mt;
+				do
+					curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/$file --output {datadir}/organelles/$file
+				done
+				for file in pt;
+				do
+					curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/$file  --output {datadir}/organelles/$file
+				done
+				python {scriptdir}/OrganelleLineage.py -d {datadir}/organelles/ -na {input.taxnames} -o {datadir}/organelles/organelles.lineage.txt
+				cat {datadir}/organelles/*genomic.fna.gz | gunzip > {datadir}/organelles/organelles.fna
+				rm {datadir}/organelles/*genomic.fna.gz
+			fi
+		else
+			mt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
+			pt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
+			for file in mt;
+			do
+				curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/$file --output {datadir}/organelles/$file
+			done
+			for file in pt;
+			do
+				curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/$file  --output {datadir}/organelles/$file
+			done
+			python {scriptdir}/OrganelleLineage.py -d {datadir}/organelles/ -na {input.taxnames} -o {datadir}/organelles/organelles.lineage.txt
+			cat {datadir}/organelles/*genomic.fna.gz | gunzip > {datadir}/organelles/organelles.fna
+			rm {datadir}/organelles/*genomic.fna.gz
+		fi
+		rm {datadir}/organelles/*gbff.gz
+		touch {output.doneorganelles}
+		"""
+
 rule DownloadNCBITaxonomy:
 	"""
 	Download current version of NCBI taxonomy
 	"""
 	input:
-		taxdir = directory(expand("{datadir}/taxonomy/",datadir=config["datadir"]))
+		taxdir = directory(expand("{datadir}/taxonomy/",datadir=config["datadir"])),
 	output:
 		#taxnames = "{datadir}/taxonomy/names.dmp",
 		#taxnodes = "{datadir}/taxonomy/nodes.dmp",
@@ -241,7 +291,8 @@ rule DownloadRefSeqGenus:
 	Download RefSeq genomes (per species) of selected genera from 16S screen
 	"""
 	input:
-		generafiles = "{workingdirectory}/genera/genus.{genus}.txt"
+		generafiles = "{workingdirectory}/genera/genus.{genus}.txt",
+		doneorganelles = "{workingdirectory}/organelles_download.done.txt"
 	params:
 		taxname = "{genus}"
 	output:
@@ -251,6 +302,8 @@ rule DownloadRefSeqGenus:
 		#refseqdir = directory("{datadir}/genera/{genus}/{genus}.Refseq"),
 		#refseqdir_orig = temp("{datadir}/genera/{genus}/RefSeq.{genus}.zip"),
 		krakenffnall = "{workingdirectory}/genera/{genus}.kraken.tax.ffn",
+		orglist = "{workingdirectory}/genera/{genus}.organelles.list",
+		orgfasta = "{workingdirectory}/genera/{genus}.organelles.ffn",
 		donefile = "{workingdirectory}/{genus}.refseqdownload.done.txt"
 	shell:
 		"""
@@ -286,7 +339,14 @@ rule DownloadRefSeqGenus:
 				touch {datadir}/genera/{params.taxname}.kraken.tax.ffn
 			fi
 		fi
-		cp {datadir}/genera/{params.taxname}.kraken.tax.ffn {output.krakenffnall}
+		if grep -q Eukaryota {input.generafiles}; then
+			grep {params.taxname} {datadir}/organelles/organelles.lineage.txt > {output.orglist} || true
+			python {scriptdir}/FastaSelect.py -f {datadir}/organelles/organelles.fna -l {output.orglist} -o {output.orgfasta}
+		else
+			touch {output.orglist}
+			touch {output.orgfasta}
+		fi
+		cat {datadir}/genera/{params.taxname}.kraken.tax.ffn {output.orgfasta} > {output.krakenffnall}
 		touch {output.donefile}
 		"""
 
