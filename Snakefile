@@ -318,7 +318,9 @@ rule DownloadRefSeqGenus:
 			timestamp=$(stat -c %y {datadir}/genera/{params.taxname}.kraken.tax.ffn | cut -f1 -d ' ')
 			timestampdate=$(date -d $timestamp +%s)
 			if [ $before -ge $timestampdate ]; then
-				rm -r {datadir}/genera/{params.taxname}
+				if [ -d {datadir}/genera/{params.taxname} ]; then
+					rm -r {datadir}/genera/{params.taxname}
+				fi
 				mkdir {datadir}/genera/{params.taxname}
 				if grep -q Eukaryota {input.generafiles}; then
 					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
