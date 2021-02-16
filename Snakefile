@@ -129,6 +129,9 @@ rule DownloadOrganelles:
 	conda:	"envs/cdhit.yaml"
 	shell:
 		"""
+		if [ ! -d {datadir}/organelles ]; then
+  			mkdir {datadir}/organelles
+		fi
 		if [ -s {datadir}/organelles/organelles.lineage.txt ]; then
         	before=$(date -d 'today - 30 days' +%s)
         	timestamp=$(stat -c %y {datadir}/organelles/organelles.lineage.txt | cut -f1 -d ' ')
