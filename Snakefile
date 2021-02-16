@@ -137,11 +137,11 @@ rule DownloadOrganelles:
                 rm {datadir}/organelles/*
 				mt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
 				pt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
-				for file in mt;
+				for file in $mt;
 				do
 					curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/$file --output {datadir}/organelles/$file
 				done
-				for file in pt;
+				for file in $pt;
 				do
 					curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/$file  --output {datadir}/organelles/$file
 				done
@@ -152,11 +152,11 @@ rule DownloadOrganelles:
 		else
 			mt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
 			pt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
-			for file in mt;
+			for file in $mt;
 			do
 				curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/$file --output {datadir}/organelles/$file
 			done
-			for file in pt;
+			for file in $pt;
 			do
 				curl -R https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/$file  --output {datadir}/organelles/$file
 			done
