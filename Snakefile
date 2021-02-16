@@ -310,18 +310,22 @@ rule DownloadRefSeqGenus:
 		donefile = "{workingdirectory}/{genus}.refseqdownload.done.txt"
 	shell:
 		"""
+		if [ ! -d {datadir}/genera ]; then
+  			mkdir {datadir}/genera
+		fi
 		if [ -s {datadir}/genera/{params.taxname}.kraken.tax.ffn ]; then
 			before=$(date -d 'today - 30 days' +%s)
 			timestamp=$(stat -c %y {datadir}/genera/{params.taxname}.kraken.tax.ffn | cut -f1 -d ' ')
 			timestampdate=$(date -d $timestamp +%s)
 			if [ $before -ge $timestampdate ]; then
 				rm -r {datadir}/genera/{params.taxname}
+				mkdir {datadir}/genera/{params.taxname}
 				if grep -q Eukaryota {input.generafiles}; then
 					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				else
 					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				fi
-				if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.download.log ]; then
+				if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
 					unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
 					python {scriptdir}/AddTaxIDKraken.py -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq -o {datadir}/genera/{params.taxname}.kraken.tax.ffn
 				fi
@@ -335,7 +339,7 @@ rule DownloadRefSeqGenus:
 			else
 				python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 			fi
-			if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.download.log ]; then
+			if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
 				unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
 				python {scriptdir}/AddTaxIDKraken.py -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq -o {datadir}/genera/{params.taxname}.kraken.tax.ffn
 			else
