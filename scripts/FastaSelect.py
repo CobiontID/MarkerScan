@@ -29,7 +29,7 @@ for record in f:
         accession=record.split('>')[1].split(' ')[0]
         if accession in accids:
             found=True
-            newline=">"+record.split(' ')[0]+"|kraken:taxid|"+str(accids[accession])+" "+" ".join(record.split(' ')[1:])
+            newline=record.split(' ')[0]+"|kraken:taxid|"+str(accids[accession])+" "+" ".join(record.split(' ')[1:])
             g.write(newline+"\n")
         else:
             found=False
