@@ -440,6 +440,8 @@ rule RunKraken:
 				kraken2 --threads {threads} --report {output.krakenreport} --db {input.krakendb} {reads} > {output.krakenout}
 			fi
 			rm -r {input.krakendb}/taxonomy/*
+			rm -r {input.krakendb}/library/added/*
+			gzip {output.krakenout}
 		fi
 		"""
 
