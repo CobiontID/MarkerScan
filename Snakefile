@@ -407,12 +407,15 @@ rule CreateKrakenDB:
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
-		mkdir {output.krakendb}
-		mkdir {output.krakendb}/taxonomy
-		cp {datadir}/taxonomy/names.dmp {datadir}/taxonomy/nodes.dmp {datadir}/taxonomy/nucl_gb.accession2taxid {datadir}/taxonomy/nucl_wgs.accession2taxid  {output.krakendb}/taxonomy
-		kraken2-build --threads {threads} --add-to-library {input.krakenffnall} --db {output.krakendb}
-		kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb}
-		kraken2-build --threads {threads} --build --kmer-len 50 --db {output.krakendb}
+		if [ -s {output.krakenffnall} ]
+		then
+			mkdir {output.krakendb}
+			mkdir {output.krakendb}/taxonomy
+			cp {datadir}/taxonomy/names.dmp {datadir}/taxonomy/nodes.dmp {datadir}/taxonomy/nucl_gb.accession2taxid {datadir}/taxonomy/nucl_wgs.accession2taxid  {output.krakendb}/taxonomy
+			kraken2-build --threads {threads} --add-to-library {input.krakenffnall} --db {output.krakendb}
+			kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb}
+			kraken2-build --threads {threads} --build --kmer-len 50 --db {output.krakendb}
+		fi
 		"""
 
 rule RunKraken:
@@ -428,13 +431,16 @@ rule RunKraken:
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
-		if [[ {reads} == *gz ]] 
+		if [ -s {output.krakenffnall} ]
 		then
-			kraken2 --gzip-compressed --threads {threads} --report {output.krakenreport} --db {input.krakendb} {reads} > {output.krakenout}
-		else
-			kraken2 --threads {threads} --report {output.krakenreport} --db {input.krakendb} {reads} > {output.krakenout}
+			if [[ {reads} == *gz ]] 
+			then
+				kraken2 --gzip-compressed --threads {threads} --report {output.krakenreport} --db {input.krakendb} {reads} > {output.krakenout}
+			else
+				kraken2 --threads {threads} --report {output.krakenreport} --db {input.krakendb} {reads} > {output.krakenout}
+			fi
+			rm -r {input.krakendb}/taxonomy/*
 		fi
-		rm -r {input.krakendb}/taxonomy/*
 		"""
 
 
