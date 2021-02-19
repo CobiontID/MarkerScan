@@ -407,7 +407,7 @@ rule CreateKrakenDB:
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
-		if [ -s {output.krakenffnall} ]
+		if [ -s {input.krakenffnall} ]
 		then
 			mkdir {output.krakendb}
 			mkdir {output.krakendb}/taxonomy
@@ -423,6 +423,7 @@ rule RunKraken:
 	Run Kraken on Hifi reads
 	"""
 	input:
+		krakenffnall = "{workingdirectory}/kraken.tax.ffn",
 		krakendb = "{workingdirectory}/krakendb"
 	output:
 		krakenout = "{workingdirectory}/kraken.output",
@@ -431,7 +432,7 @@ rule RunKraken:
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
-		if [ -s {output.krakenffnall} ]
+		if [ -s {input.krakenffnall} ]
 		then
 			if [[ {reads} == *gz ]] 
 			then
