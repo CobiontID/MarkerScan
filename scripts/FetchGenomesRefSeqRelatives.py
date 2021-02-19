@@ -109,7 +109,7 @@ if args.tax in namestax:
                     sciname=sciname_orig
             else:
                 sciname=sciname_orig
-            if sciname != args.taxname:
+            if sciname != args.tax:
                 if sciname not in SpeciesDictionary:
                     SpeciesDictionary[sciname]={}
                     SpeciesDictionary[sciname]['ReleaseDate']=distro['submission_date']
