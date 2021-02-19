@@ -400,14 +400,9 @@ checkpoint SplitFasta:
 		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
 	output:
 		splitdir = directory("{workingdirectory}/split_fasta/")
-	threads: 10
-	conda: "envs/seqkit.yaml"
 	shell:
 		"""
-		mkdir {output.splitdir}
-		cd {output.splitdir}
-		seqkit split {input.krakenffnall} -p {threads}
-		cd {workingdirectory}
+		python {scriptdir}/FastaSplit.py -f {input.krakenffnall} -s 5000 -o {output.splitdir}
 		"""
 
 rule doMasking:
@@ -415,16 +410,17 @@ rule doMasking:
 	Rule to mask repetitive regions in fasta file
 	"""
 	input:
-		fastafile = "{workingdirectory}/split_fasta/kraken.tax.ffn.part_{num}"
+		fastafile = "{workingdirectory}/split_fasta/kraken.tax.{num}.fa"
 	output:
 		maskedfile = "{workingdirectory}/split_fasta/kraken.tax.{num}.masked.fa"
 	conda: "envs/kraken.yaml"
+	threads: 1
 	shell:
 		"""
 		dustmasker -in {input.fastafile} -outfmt fasta | sed -e '/^>/!s/[a-z]/x/g' > {output.maskedfile}
 		"""
 
-def aggregate_masking:
+def aggregate_masking(wildcards):
 	checkpoint_output=checkpoints.SplitFasta.get(**wildcards).output[0]
 	return expand ("{workingdirectory}/split_fasta/kraken.tax.{num}.masked.fa", workingdirectory=config["workingdirectory"], num=glob_wildcards(os.path.join(checkpoint_output, 'kraken.tax.{num}.fa')).num)
 
@@ -434,7 +430,51 @@ rule concatenate_masking:
 	output:
 		"{workingdirectory}/kraken.tax.masked.ffn"
 	shell:
-		"cat {input} > {output}"
+		"""
+		cat {input} > {output}
+		"""
+
+checkpoint SplitFastaRel:
+	"""
+	Split downloaded assemblies fasta file depending on the number of cores
+	"""
+	input:
+		krakenffnall = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
+	output:
+		splitdir = directory("{workingdirectory}/split_fasta_rel/")
+	shell:
+		"""
+		python {scriptdir}/FastaSplit.py -f {input.krakenffnall} -s 5000 -o {output.splitdir}
+		"""
+
+rule doMaskingRel:
+	"""
+	Rule to mask repetitive regions in fasta file
+	"""
+	input:
+		fastafile = "{workingdirectory}/split_fasta_rel/kraken.tax.{num}.fa"
+	output:
+		maskedfile = "{workingdirectory}/split_fasta_rel/kraken.tax.{num}.masked.fa"
+	conda: "envs/kraken.yaml"
+	threads: 1
+	shell:
+		"""
+		dustmasker -in {input.fastafile} -outfmt fasta | sed -e '/^>/!s/[a-z]/x/g' > {output.maskedfile}
+		"""
+
+def aggregate_masking_relatives(wildcards):
+	checkpoint_output=checkpoints.SplitFastaRel.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/split_fasta_rel/kraken.tax.{num}.masked.fa", workingdirectory=config["workingdirectory"], num=glob_wildcards(os.path.join(checkpoint_output, 'kraken.tax.{num}.fa')).num)
+
+rule concatenate_masking_relatives:
+	input:
+		aggregate_masking_relatives
+	output:
+		"{workingdirectory}/kraken.relatives.masked.ffn"
+	shell:
+		"""
+		cat {input} > {output}
+		"""
 
 rule CreateKrakenDB:
 	"""
@@ -443,7 +483,7 @@ rule CreateKrakenDB:
 	input:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
 		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
-		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
+		krakenffnrel = "{workingdirectory}/kraken.relatives.masked.ffn"
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
 	threads: 10
@@ -456,7 +496,7 @@ rule CreateKrakenDB:
 			mkdir {output.krakendb}/taxonomy
 			cp {datadir}/taxonomy/names.dmp {datadir}/taxonomy/nodes.dmp {datadir}/taxonomy/nucl_gb.accession2taxid {datadir}/taxonomy/nucl_wgs.accession2taxid  {output.krakendb}/taxonomy
 			kraken2-build --threads {threads} --add-to-library {input.krakenffnall} --db {output.krakendb} --no-masking
-			kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb}
+			kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb} --no-masking
 			kraken2-build --threads {threads} --build --kmer-len 50 --db {output.krakendb}
 		fi
 		"""
@@ -485,7 +525,6 @@ rule RunKraken:
 			fi
 			rm -r {input.krakendb}/taxonomy/*
 			rm -r {input.krakendb}/library/added/*
-			gzip {output.krakenout}
 		fi
 		"""
 
@@ -613,13 +652,16 @@ rule concatenate_reads:
 		"{workingdirectory}/final_reads_removal.fa"
 	shell:
 		"cat {input} > {output}"
+
 rule create_report:
 	input:
-		finalrem = "{workingdirectory}/final_reads_removal.fa"
+		finalrem = "{workingdirectory}/final_reads_removal.fa",
+		krakenout = "{workingdirectory}/kraken.output"
 	output:
 		rep = "{workingdirectory}/{shortname}.report.pdf"
 	conda: "envs/fpdf.yaml"
 	shell:
 		"""
 		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem}
+		gzip {input.krakenout}
 		"""
