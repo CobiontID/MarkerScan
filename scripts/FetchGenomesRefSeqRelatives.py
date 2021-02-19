@@ -109,20 +109,21 @@ if args.tax in namestax:
                     sciname=sciname_orig
             else:
                 sciname=sciname_orig
-            if sciname not in SpeciesDictionary:
-                SpeciesDictionary[sciname]={}
-                SpeciesDictionary[sciname]['ReleaseDate']=distro['submission_date']
-                SpeciesDictionary[sciname]['Identifier']=acc
-                SpeciesDictionary[sciname]['GenomeSize']=int(distro['seq_length'])
-                SpeciesDictionary[sciname]['N50']=contiguity
-            else:
-                novel_submission = time.strptime(distro['submission_date'], "%Y-%m-%d")
-                old_submission = time.strptime(SpeciesDictionary[sciname]['ReleaseDate'], "%Y-%m-%d")
-                if novel_submission > old_submission or contiguity > SpeciesDictionary[sciname]['N50']:
+            if sciname != args.taxname:
+                if sciname not in SpeciesDictionary:
+                    SpeciesDictionary[sciname]={}
                     SpeciesDictionary[sciname]['ReleaseDate']=distro['submission_date']
                     SpeciesDictionary[sciname]['Identifier']=acc
                     SpeciesDictionary[sciname]['GenomeSize']=int(distro['seq_length'])
                     SpeciesDictionary[sciname]['N50']=contiguity
+                else:
+                    novel_submission = time.strptime(distro['submission_date'], "%Y-%m-%d")
+                    old_submission = time.strptime(SpeciesDictionary[sciname]['ReleaseDate'], "%Y-%m-%d")
+                    if novel_submission > old_submission or contiguity > SpeciesDictionary[sciname]['N50']:
+                        SpeciesDictionary[sciname]['ReleaseDate']=distro['submission_date']
+                        SpeciesDictionary[sciname]['Identifier']=acc
+                        SpeciesDictionary[sciname]['GenomeSize']=int(distro['seq_length'])
+                        SpeciesDictionary[sciname]['N50']=contiguity
 
         assemblytxt=""
         genomesizes=[]
