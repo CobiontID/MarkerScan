@@ -392,6 +392,49 @@ rule DownloadGenusRel:
 		python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
 		"""
 
+checkpoint SplitFasta:
+	"""
+	Split downloaded assemblies fasta file depending on the number of cores
+	"""
+	input:
+		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
+	output:
+		splitdir = directory("{workingdirectory}/split_fasta/")
+	threads: 10
+	conda: "envs/seqkit.yaml"
+	shell:
+		"""
+		mkdir {output.splitdir}
+		cd {output.splitdir}
+		seqkit split {input.krakenffnall} -p {threads}
+		cd {workingdirectory}
+		"""
+
+rule doMasking:
+	"""
+	Rule to mask repetitive regions in fasta file
+	"""
+	input:
+		fastafile = "{workingdirectory}/split_fasta/kraken.tax.ffn.part_{num}"
+	output:
+		maskedfile = "{workingdirectory}/split_fasta/kraken.tax.{num}.masked.fa"
+	conda: "envs/kraken.yaml"
+	shell:
+		"""
+		dustmasker -in {input.fastafile} -outfmt fasta | sed -e '/^>/!s/[a-z]/x/g' > {output.maskedfile}
+		"""
+
+def aggregate_masking:
+	checkpoint_output=checkpoints.SplitFasta.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/split_fasta/kraken.tax.{num}.masked.fa", workingdirectory=config["workingdirectory"], num=glob_wildcards(os.path.join(checkpoint_output, 'kraken.tax.{num}.fa')).num)
+
+rule concatenate_masking:
+	input:
+		aggregate_masking
+	output:
+		"{workingdirectory}/kraken.tax.masked.ffn"
+	shell:
+		"cat {input} > {output}"
 
 rule CreateKrakenDB:
 	"""
@@ -399,7 +442,7 @@ rule CreateKrakenDB:
 	"""
 	input:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
-		krakenffnall = "{workingdirectory}/kraken.tax.ffn",
+		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
 		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
@@ -412,7 +455,7 @@ rule CreateKrakenDB:
 			mkdir {output.krakendb}
 			mkdir {output.krakendb}/taxonomy
 			cp {datadir}/taxonomy/names.dmp {datadir}/taxonomy/nodes.dmp {datadir}/taxonomy/nucl_gb.accession2taxid {datadir}/taxonomy/nucl_wgs.accession2taxid  {output.krakendb}/taxonomy
-			kraken2-build --threads {threads} --add-to-library {input.krakenffnall} --db {output.krakendb}
+			kraken2-build --threads {threads} --add-to-library {input.krakenffnall} --db {output.krakendb} --no-masking
 			kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb}
 			kraken2-build --threads {threads} --build --kmer-len 50 --db {output.krakendb}
 		fi
@@ -445,7 +488,6 @@ rule RunKraken:
 			gzip {output.krakenout}
 		fi
 		"""
-
 
 rule ExtractReadsKraken:
 	"""
