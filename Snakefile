@@ -483,7 +483,11 @@ rule CreateKrakenDB:
 	input:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
 		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
-		krakenffnrel = "{workingdirectory}/kraken.relatives.masked.ffn"
+		krakenffnrel = "{workingdirectory}/kraken.relatives.masked.ffn",
+		splitdirrel = directory("{workingdirectory}/split_fasta_rel/"),
+		splitdir = directory("{workingdirectory}/split_fasta/"),
+		krakenfasta = "{workingdirectory}/kraken.tax.ffn",
+		krakenrelfasta = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
 	threads: 10
@@ -499,6 +503,10 @@ rule CreateKrakenDB:
 			kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb} --no-masking
 			kraken2-build --threads {threads} --build --kmer-len 50 --db {output.krakendb}
 		fi
+		rm -r {input.splitdirrel}
+		rm -r {input.splitdir}
+		rm {input.krakenfasta}
+		rm {input.krakenrelfasta}
 		"""
 
 rule RunKraken:
