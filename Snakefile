@@ -23,6 +23,7 @@ rule all:
 		expand("{pwd}/kraken.output",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
+		expand("{pwd}/putative_reads_removal.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"])
 
 rule HMMscan_SSU:
@@ -603,6 +604,33 @@ rule RunBusco:
 		fi
 		touch {output.completed}
 		"""
+rule NucmerRefSeqContigs:
+	"""
+	Alignment all contigs against reference genomes
+	"""
+	input:
+		circgenome = "{workingdirectory}/{genus}/{genus}.ctgs.fa",
+		buscotable = "{workingdirectory}/{genus}/busco/done.txt",
+		refseqmasked = "{workingdirectory}/genera/{genus}.kraken.tax.ffn"
+	output:
+		completed = "{workingdirectory}/{genus}/nucmer_contigs.done.txt",
+		nucmerdelta = "{workingdirectory}/{genus}/{genus}_vs_contigs.delta",
+        nucmercoords = "{workingdirectory}/{genus}/{genus}_vs_contigs.coords.txt",
+		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_contigs.overview.txt"
+	conda: "envs/nucmer.yaml"
+	shell:
+		"""
+		if [ -s {input.circgenome} ]; then
+			nucmer --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
+			show-coords -c -l -L 100 -r -T {output.nucmerdelta} > {output.nucmercoords}
+			python {scriptdir}/ParseNucmer.py -n {output.nucmercoords} -o {output.nucmercontigs}
+		else
+			touch {output.nucmerdelta}
+			touch {output.nucmercoords}
+			touch {output.nucmercontigs}
+		fi
+		touch {output.completed}
+		"""
 
 rule ClusterBusco:
 	"""
@@ -611,8 +639,10 @@ rule ClusterBusco:
 	input:
 		assemblyinfo = "{workingdirectory}/{genus}/{genus}.ctgs",
 		completed = "{workingdirectory}/{genus}/busco/done.txt",
+		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_contigs.overview.txt",
 		circgenome = "{workingdirectory}/{genus}/{genus}.ctgs.fa",
 		krakenfa = "{workingdirectory}/{genus}/kraken.fa",
+		krakenreads = "{workingdirectory}/{genus}/kraken.reads",
 		reads = "{workingdirectory}/{genus}/{genus}.reads"
 	output:
 		summary = "{workingdirectory}/{genus}/busco/completeness_per_contig.txt",
@@ -620,23 +650,78 @@ rule ClusterBusco:
 		contigsid = "{workingdirectory}/{genus}/{genus}.ids.txt",
 		readids = "{workingdirectory}/{genus}/{genus}.readsids.txt",
 		finalreads = "{workingdirectory}/{genus}/{genus}.final_reads.fa",
+		nucmercontiglist = "{workingdirectory}/{genus}/{genus}.nucmer.contigs.txt",
+		buscocontiglist = "{workingdirectory}/{genus}/{genus}.busco.contigs.txt",
+		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads",
+		unmappedfa = "{workingdirectory}/{genus}/{genus}.unmapped.fa",
 	conda: "envs/seqtk.yaml"
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			python {scriptdir}/ParseBuscoTableMapping.py -d {input.completed} -i {input.assemblyinfo} -o {output.summary} -r {input.reads} -o2 {output.readids}
-			cut -f1 {output.summary} | sort | uniq | grep -v '^#' > {output.contigsid}
-			seqtk subseq {input.circgenome} {output.contigsid} > {output.finalassembly}
-			seqtk subseq {input.krakenfa} {output.readids} > {output.finalreads}
+			python {scriptdir}/ParseBuscoTableMapping.py -d {input.completed} -i {input.assemblyinfo} -o {output.summary} 
+			grep -v 'NOT COMPLETE' {input.nucmercontigs} | cut -f1 | sort | uniq > {output.nucmercontiglist} || true
+			cut -f1 {output.summary} | sort | uniq | grep -v '^#' > {output.buscocontiglist} || true
+			cat  {output.buscocontiglist} {output.nucmercontiglist} | sort | uniq > {output.contigsid} || true
+			if [ -s {output.contigsid}  ]; then
+				seqtk subseq {input.circgenome} {output.contigsid} > {output.finalassembly}
+				python {scriptdir}/SelectReads.py -r {input.reads} -o {output.readids} -c {output.contigsid}
+				seqtk subseq {input.krakenfa} {output.readids} > {output.finalreads}
+				comm -23 <(sort {input.krakenreads}) <(sort {output.readids}) > {output.unmapped}
+				seqtk subseq {input.krakenfa} {output.unmapped} > {output.unmappedfa}
+			else
+				touch {output.finalassembly}
+				touch {output.readids}
+				touch {output.finalreads}
+				touch {output.unmapped}
+				cp {input.krakenfa} {output.unmappedfa}
+			fi
 		else
 			touch {output.summary}
 			touch {output.finalassembly}
 			touch {output.contigsid}
 			touch {output.readids}
 			touch {output.finalreads}
+			touch {output.nucmercontiglist}
+			touch {output.buscocontiglist}
+			touch {output.unmapped}
+			touch {output.unmappedfa}
 		fi
 		"""
-		
+
+rule NucmerRefSeqReads:
+	"""
+	Alignment all contigs against reference genomes
+	"""
+	input:
+		circgenome = "{workingdirectory}/{genus}/{genus}.unmapped.fa",
+		refseqmasked = "{workingdirectory}/genera/{genus}.kraken.tax.ffn",
+		krakenfa = "{workingdirectory}/{genus}/kraken.fa",
+	output:
+		completed = "{workingdirectory}/{genus}/nucmer_reads.done.txt",
+		nucmerdelta = "{workingdirectory}/{genus}/{genus}_vs_reads.delta",
+        nucmercoords = "{workingdirectory}/{genus}/{genus}_vs_reads.coords.txt",
+		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_reads.overview.txt",
+		nucmercontiglist = "{workingdirectory}/{genus}/{genus}.nucmer.reads.txt",
+		finalreads = "{workingdirectory}/{genus}/{genus}.putative_reads.fa",
+	conda: "envs/nucmer.yaml"
+	shell:
+		"""
+		if [ -s {input.circgenome} ]; then
+			nucmer --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
+			show-coords -c -l -L 100 -r -T {output.nucmerdelta} > {output.nucmercoords}
+			python {scriptdir}/ParseNucmer.py -n {output.nucmercoords} -o {output.nucmercontigs}
+			grep -v 'NOT COMPLETE' {output.nucmercontigs} | cut -f1 | sort | uniq > {output.nucmercontiglist} || true
+			seqtk subseq {input.krakenfa} {output.nucmercontiglist} > {output.finalreads}
+		else
+			touch {output.nucmerdelta}
+			touch {output.nucmercoords}
+			touch {output.nucmercontigs}
+			touch {output.nucmercontiglist}
+			touch {output.finalreads}
+		fi
+		touch {output.completed}
+		"""
+
 def aggregate_assemblies(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
 	return expand ("{workingdirectory}/{genus}/{genus}.finalassembly.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
@@ -660,6 +745,19 @@ rule concatenate_reads:
 		"{workingdirectory}/final_reads_removal.fa"
 	shell:
 		"cat {input} > {output}"
+
+def aggregate_readsets_putative(wildcards):
+	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/{genus}/{genus}.putative_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
+
+rule concatenate_reads_putative:
+	input:
+		aggregate_readsets_putative
+	output:
+		"{workingdirectory}/putative_reads_removal.fa"
+	shell:
+		"cat {input} > {output}"
+
 
 rule create_report:
 	input:

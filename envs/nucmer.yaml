@@ -1,0 +1,6 @@
+name: nucmer
+channels:
+  - bioconda
+dependencies:
+  - mummer4
+  - seqtk=1.3

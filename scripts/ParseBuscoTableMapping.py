@@ -8,9 +8,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", type=str, action='store', dest='dir', help='define busco dir')
 parser.add_argument("-i", type=str, action='store', dest='assinf', help='define info on contigs')
-parser.add_argument("-r", type=str, action='store', dest='readinf',help='define info on reads mapped')
 parser.add_argument("-o", type=str, action='store', dest='out', help='define outputfile')
-parser.add_argument("-o2", type=str, action='store', dest='out2', help='define outputfile readlist')
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 args = parser.parse_args()
 
@@ -69,20 +67,3 @@ for ctg in contig_assembly:
     #else:
     #    l.write(ctg+'\t0\t'+str(len(total_genes))+'\t0%\t0\t'+str(contig_assembly[ctg]['length'])+'\n')
 l.close()
-
-readlist=[]
-m=open(args.readinf,'r')
-for line in m:
-    line=line.strip()
-    ctg=line.split('\t')[0]
-    if ctg in finalcontigs:
-        readnames=line.split('\t')[1].split(',')
-        for read in readnames:
-            if read not in readlist:
-                readlist.append(read)
-m.close()
-
-n=open(args.out2,'w')
-for rd in readlist:
-    n.write(rd+'\n')
-n.close()
