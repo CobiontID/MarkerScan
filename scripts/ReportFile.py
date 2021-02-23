@@ -65,18 +65,17 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     m.close()
     pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads ("+str(percentage)+"%) classified by Kraken as "+genusname+"." , ln=1, align="L")
     pdf.cell(200, 6,ln=1, align="L")
+
     completeness=wd+'/'+genusname+'/busco/completeness_per_contig.txt'
-    num_contigs = sum(1 for line in open(completeness)) - 1
-    totallen=0
+    pdf.set_font("Arial", "U", size=10)
+    pdf.cell(200, 6, txt="Busco completeness", ln=1, align="L")
+    pdf.set_font("Arial", size=10)
     l=open(completeness,'r')
     for line in l:
         line=line.strip()
-        if not line.startswith('#'):
-            totallen=totallen+int(line.split('\t')[5])
         line=line.replace('\t',';')
         pdf.cell(200, 6, txt=line, ln=1, align="L")
     l.close()
-    mblen="{:.2f}".format(float(totallen/1000000))+"Mb"
     for buscooutput in glob.glob(wd+'/'+genusname+'/busco/busco/short_summary.specific.*.busco.txt'):
         k=open(buscooutput,'r')
         for line in k:
@@ -84,8 +83,49 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
             if line.startswith('C'):
                 pdf.cell(200, 6, txt=line, ln=1, align="L")
         k.close()
-    readids=wd+'/'+genusname+'/'+genusname+'.readsids.txt'
-    num_lines = sum(1 for line in open(readids))
     pdf.cell(200, 6,ln=1, align="L")
-    pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads mapping to the full length of "+str(num_contigs)+" contigs ("+mblen+") containing BUSCO genes." , ln=1, align="L")
+
+    pdf.set_font("Arial", "U", size=10)
+    pdf.cell(200, 6, txt="Alignment RefSeq genomes", ln=1, align="L")
+    pdf.set_font("Arial", size=10)
+    nucmerfile=wd+'/'+genusname+'/'+genusname+'_vs_contigs.overview.txt'
+    l=open(nucmerfile,'r')
+    for line in l:
+        line=line.strip()
+        if not 'NOT COMPLETE' in line:
+            newline=line.split('\t')[0]+';'+"{:.2f}".format(float(line.split('\t')[2].split('%')[0]))+'%'
+            pdf.cell(200, 6, txt=newline, ln=1, align="L")
+    l.close()
+    pdf.cell(200, 6,ln=1, align="L")
+
+    readids=wd+'/'+genusname+'/'+genusname+'.readsids.txt'
+    num_lines_reads = sum(1 for line in open(readids))
+    fastafile = wd + '/' + genusname + '/' +genusname+'.finalassembly.fa'
+    num_contigs=0
+    totallen=0
+    seqlen=0
+    l=open(fastafile,'r')
+    for line in l:
+        if line.startswith('>'):
+            num_contigs=num_contigs+1
+            totallen=totallen+seqlen
+            seqlen=0
+        else:
+            seqlen=seqlen+len(line)
+    totallen=totallen+seqlen
+    mblen="{:.2f}".format(float(totallen/1000000))+"Mb"
+    pdf.cell(200, 6, txt="There are "+str(num_lines_reads)+" reads mapping to the full length of "+str(num_contigs)+" contigs ("+mblen+") containing BUSCO genes " , ln=1, align="L")
+    pdf.cell(200, 6, txt="and/or mapping to refseq genomes." , ln=1, align="L")
+
+    totalfraction="{:.2f}".format(float(num_lines_reads/num_lines)*100)
+    if (float(num_lines_reads/num_lines)*100) < 80:
+        pdf.set_font("Arial", "B", size=10)
+    pdf.cell(200, 6, txt="A total fraction of "+str(totalfraction)+"% of the classified kraken reads are removed." , ln=1, align="L")
+    pdf.set_font("Arial", size=10)
+    putreadids=wd+'/'+genusname+'/'+genusname+'.nucmer.reads.txt'
+    num_lines_put = sum(1 for line in open(putreadids))
+    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" reads which are classified as putative contamination.", ln=1, align="L")
+
+    
+
 pdf.output(args.out)
