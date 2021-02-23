@@ -19,7 +19,7 @@ rule all:
 	input:
 		expand("{pwd}/{name}.ProkSSU.reduced.fa",pwd=config["workingdirectory"], name=config["shortname"]),
 		expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),		
-		expand("{pwd}/kraken.tax.ffn",pwd=config["workingdirectory"]),
+		expand("{pwd}/kraken.tax.masked.ffn",pwd=config["workingdirectory"]),
 		expand("{pwd}/kraken.output",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
@@ -763,7 +763,8 @@ rule concatenate_reads_putative:
 rule create_report:
 	input:
 		finalrem = "{workingdirectory}/final_reads_removal.fa",
-		krakenout = "{workingdirectory}/kraken.output"
+		krakenout = "{workingdirectory}/kraken.output",
+		putrem = "{workingdirectory}/putative_reads_removal.fa"
 	output:
 		rep = "{workingdirectory}/{shortname}.report.pdf"
 	conda: "envs/fpdf.yaml"
