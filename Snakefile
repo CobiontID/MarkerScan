@@ -152,6 +152,7 @@ rule DownloadOrganelles:
 				python {scriptdir}/OrganelleLineage.py -d {datadir}/organelles/ -na {input.taxnames} -o {datadir}/organelles/organelles.lineage.txt
 				cat {datadir}/organelles/*genomic.fna.gz | gunzip > {datadir}/organelles/organelles.fna
 				rm {datadir}/organelles/*genomic.fna.gz
+				rm {datadir}/organelles/*gbff.gz
 			fi
 		else
 			mt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
@@ -167,8 +168,8 @@ rule DownloadOrganelles:
 			python {scriptdir}/OrganelleLineage.py -d {datadir}/organelles/ -na {input.taxnames} -o {datadir}/organelles/organelles.lineage.txt
 			cat {datadir}/organelles/*genomic.fna.gz | gunzip > {datadir}/organelles/organelles.fna
 			rm {datadir}/organelles/*genomic.fna.gz
-		fi
-		rm {datadir}/organelles/*gbff.gz
+			rm {datadir}/organelles/*gbff.gz
+		fi	
 		touch {output.doneorganelles}
 		"""
 
@@ -515,7 +516,7 @@ rule RunKraken:
 	Run Kraken on Hifi reads
 	"""
 	input:
-		krakenffnall = "{workingdirectory}/kraken.tax.ffn",
+		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
 		krakendb = "{workingdirectory}/krakendb"
 	output:
 		krakenout = "{workingdirectory}/kraken.output",
