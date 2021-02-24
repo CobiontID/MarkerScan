@@ -64,17 +64,22 @@ if args.tax in namestax:
     parent = taxparents[taxid]
     parentname = taxnames[parent]
     foundlevel = False
+    print(str(taxid)+'\t'+str(parent)+'\t'+parentname)
     while parent != taxparents[parent]:
         parentname = taxnames[parent]
-        print(parentname)
+        parentname_combi = parentname
+        if ' ' in parentname:
+            parentname_combi = parentname.replace(' ','_')
+        print(str(parent)+'\t'+parentname+'\t'+parentname_combi)
         # fetch data from NCBI via 'datasets' of all species from that clade
         if args.refs == 'yes':
-            cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-name '"+str(parentname)+"' > "+str(args.dir)+"/log."+str(parentname)+".json"
+            cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-id '"+str(parent)+"' > "+str(args.dir)+"/log."+str(parentname_combi)+".json"
         else:
-            cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(parentname)+"' > "+str(args.dir)+"/log."+str(parentname)+".json"
+            cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-id '"+str(parent)+"' > "+str(args.dir)+"/log."+str(parentname_combi)+".json"
+        print(cmd)
         os.system(cmd)
         # parse resulting JSON file
-        with open(str(args.dir)+"/log."+str(parentname)+".json", 'r') as f:
+        with open(str(args.dir)+"/log."+str(parentname_combi)+".json", 'r') as f:
             distros_dict = json.load(f)
         if distros_dict:
             i=0
@@ -84,7 +89,7 @@ if args.tax in namestax:
                 foundlevel = True
         f.close()
         if foundlevel == True:
-            cmd="mv "+str(args.dir)+"/log."+str(parentname)+".json "+str(args.dir)+"/log."+str(args.tax.replace(' ','_'))+".json"
+            cmd="mv "+str(args.dir)+"/log."+str(parentname_combi)+".json "+str(args.dir)+"/log."+str(args.tax.replace(' ','_'))+".json"
             os.system(cmd)
             break
         parent = taxparents[parent]
