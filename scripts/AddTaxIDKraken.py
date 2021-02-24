@@ -22,12 +22,14 @@ for json_str in json_list:
     distro = json.loads(json_str)
     if 'refseqAssmAccession' in distro['assemblyInfo']:
         acc=distro['assemblyInfo']['refseqAssmAccession']
-        if acc == 'na':
-            acc=distro['assemblyInfo']['genbankAssmAccession']
+        #if acc == 'na':
+        acc2=distro['assemblyInfo']['genbankAssmAccession']
     else:
         acc=distro['assemblyInfo']['genbankAssmAccession']
     taxid=distro['taxId']
-    SpeciesDictionary[acc]=taxid        
+    SpeciesDictionary[acc]=taxid
+    SpeciesDictionary[acc2]=taxid
+    print(acc+'\t'+str(taxid))        
 
 g=open(results.output,'w')
 files = glob.glob(results.directory + '/*/*/*/*.fna', recursive=True)
@@ -48,6 +50,7 @@ for fastafile in files:
         if record.startswith(">"):
             record=record.strip()
             accession=fastafile.split('/')[-2]
+            #print(accession)
             if accession in SpeciesDictionary:
                 newline=record.split(' ')[0]+"|kraken:taxid|"+str(SpeciesDictionary[accession])+" "+" ".join(record.split(' ')[1:])
             else:
