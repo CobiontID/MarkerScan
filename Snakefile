@@ -752,15 +752,46 @@ rule RunBuscoAssembly:
 		touch {output.completed}
 		"""
 
+rule NucmerRefSeqHifiasm:
+	"""
+	Alignment all contigs against reference genomes
+	"""
+	input:
+		circgenome = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
+		buscotable = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
+		refseqmasked = "{workingdirectory}/genera/{genus}.kraken.tax.ffn"
+	output:
+		completed = "{workingdirectory}/{genus}/nucmer_hifiasm.done.txt",
+		nucmerdelta = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.delta",
+        nucmercoords = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.coords.txt",
+		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.overview.txt"
+	conda: "envs/nucmer.yaml"
+	shell:
+		"""
+		if [ -s {input.circgenome} ]; then
+			nucmer --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
+			show-coords -c -l -L 100 -r -T {output.nucmerdelta} > {output.nucmercoords}
+			python {scriptdir}/ParseNucmer.py -n {output.nucmercoords} -o {output.nucmercontigs}
+		else
+			touch {output.nucmerdelta}
+			touch {output.nucmercoords}
+			touch {output.nucmercontigs}
+		fi
+		touch {output.completed}
+		"""
+
 rule Map2AssemblyHifiasm:
 	input:
 		krakenfa = "{workingdirectory}/{genus}/kraken.fa",
 		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
-		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads"
+		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads",
+		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.overview.txt"
 	output:
 		summary = "{workingdirectory}/{genus}/buscoAssembly/completeness_per_contig.txt",
 		buscocontiglist = "{workingdirectory}/{genus}/{genus}.buscoAssembly.contigs.txt",
+		nucmercontiglist = "{workingdirectory}/{genus}/{genus}.NucmerAssembly.contigs.txt",
+		contiglist = "{workingdirectory}/{genus}/{genus}.Assembly.contigs.txt",
 		paffile = "{workingdirectory}/{genus}/{genus}.assembly.paf",
 		fasta = "{workingdirectory}/{genus}/{genus}.assembly.fa",
 		mapping = "{workingdirectory}/{genus}/{genus}.assembly.ctgs",
@@ -773,7 +804,9 @@ rule Map2AssemblyHifiasm:
 		"""
 		python {scriptdir}/ParseBuscoTableMapping.py -d {input.completed} -i {input.assemblyfasta} -o {output.summary} 
 		cut -f1 {output.summary} | sort | uniq | grep -v '^#' > {output.buscocontiglist} || true
-		seqtk subseq {input.assemblyfasta} {output.buscocontiglist} > {output.fasta}
+		grep -v 'NOT COMPLETE' {input.nucmercontigs} | cut -f1 | sort | uniq > {output.nucmercontiglist} || true
+		cat {output.buscocontiglist} {output.nucmercontiglist} | sort | uniq > {output.contiglist}
+		seqtk subseq {input.assemblyfasta} {output.contiglist} > {output.fasta}
 		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
 		comm -12 <(sort {input.unmapped}) <(cut -f2 {output.reads} | tr ',' '\n' | sort | uniq) > {output.reads_unmapped}
