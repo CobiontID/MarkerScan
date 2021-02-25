@@ -605,6 +605,7 @@ rule RunBusco:
 		fi
 		touch {output.completed}
 		"""
+
 rule NucmerRefSeqContigs:
 	"""
 	Alignment all contigs against reference genomes
@@ -689,36 +690,126 @@ rule ClusterBusco:
 		fi
 		"""
 
-rule NucmerRefSeqReads:
+rule Hifiasm:
 	"""
-	Alignment all contigs against reference genomes
+	Run hifiasm assembly on kraken classfied reads
 	"""
 	input:
-		circgenome = "{workingdirectory}/{genus}/{genus}.unmapped.fa",
-		refseqmasked = "{workingdirectory}/genera/{genus}.kraken.tax.ffn",
-		krakenfa = "{workingdirectory}/{genus}/kraken.fa",
+		krakenfa = "{workingdirectory}/{genus}/kraken.fa"
+	params:
+		assemblyprefix = "{workingdirectory}/{genus}/hifiasm/hifiasm"
 	output:
-		completed = "{workingdirectory}/{genus}/nucmer_reads.done.txt",
-		nucmerdelta = "{workingdirectory}/{genus}/{genus}_vs_reads.delta",
-        nucmercoords = "{workingdirectory}/{genus}/{genus}_vs_reads.coords.txt",
-		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_reads.overview.txt",
-		nucmercontiglist = "{workingdirectory}/{genus}/{genus}.nucmer.reads.txt",
-		finalreads = "{workingdirectory}/{genus}/{genus}.putative_reads.fa",
-	conda: "envs/nucmer.yaml"
+		completed = "{workingdirectory}/{genus}/assembly.done.txt",
+		dirname = directory("{workingdirectory}/{genus}/hifiasm"),
+		gfa = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.gfa",
+		fasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta"
+	threads: 10
+	conda: "envs/hifiasm.yaml"
+	shell:
+		"""
+		if [ ! -d {output.dirname} ]; then
+  			mkdir {output.dirname}
+		fi
+		if [ -s {input.krakenfa} ]; then
+			hifiasm -o {params.assemblyprefix} -t {threads} {input.krakenfa} -D 10 -l 1 -s 0.999
+			awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
+			faidx {output.fasta}
+		else
+			touch {output.gfa} 
+			touch {output.fasta} 
+		fi
+		touch {output.completed}
+		"""
+
+rule RunBuscoAssembly:
+	"""
+	Detect number of BUSCO genes per contig
+	"""
+	input:
+		circgenome = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
+		donefile = "{workingdirectory}/{genus}/buscoReads/done.txt"
+	params:
+		buscodir = directory("{workingdirectory}/{genus}/buscoAssembly")
+	output:
+		buscodbs = "{workingdirectory}/{genus}/info_dbs_assembly.txt",
+		buscoini = "{workingdirectory}/{genus}/config_busco_assembly.ini",
+		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt"
+	conda: "envs/busco.yaml"
+	threads:
+		10
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			nucmer --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
-			show-coords -c -l -L 100 -r -T {output.nucmerdelta} > {output.nucmercoords}
-			python {scriptdir}/ParseNucmer.py -n {output.nucmercoords} -o {output.nucmercontigs}
-			grep -v 'NOT COMPLETE' {output.nucmercontigs} | cut -f1 | sort | uniq > {output.nucmercontiglist} || true
-			seqtk subseq {input.krakenfa} {output.nucmercontiglist} > {output.finalreads}
+			busco --list-datasets > {output.buscodbs}
+			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+			busco --config {output.buscoini} -f
 		else
-			touch {output.nucmerdelta}
-			touch {output.nucmercoords}
-			touch {output.nucmercontigs}
-			touch {output.nucmercontiglist}
-			touch {output.finalreads}
+			touch {output.buscodbs}
+			touch {output.buscoini}
+		fi
+		touch {output.completed}
+		"""
+
+rule Map2AssemblyHifiasm:
+	input:
+		krakenfa = "{workingdirectory}/{genus}/kraken.fa",
+		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
+		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
+		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads"
+	output:
+		summary = "{workingdirectory}/{genus}/buscoAssembly/completeness_per_contig.txt",
+		buscocontiglist = "{workingdirectory}/{genus}/{genus}.buscoAssembly.contigs.txt",
+		paffile = "{workingdirectory}/{genus}/{genus}.assembly.paf",
+		fasta = "{workingdirectory}/{genus}/{genus}.assembly.fa",
+		mapping = "{workingdirectory}/{genus}/{genus}.assembly.ctgs",
+		reads = "{workingdirectory}/{genus}/{genus}.assembly.reads",
+		reads_unmapped = "{workingdirectory}/{genus}/{genus}.assembly.unmapped.reads",
+		readsfasta = "{workingdirectory}/{genus}/{genus}.putative_reads.fa"
+	threads: 10
+	conda: "envs/minimap.yaml"
+	shell:
+		"""
+		python {scriptdir}/ParseBuscoTableMapping.py -d {input.completed} -i {input.assemblyfasta} -o {output.summary} 
+		cut -f1 {output.summary} | sort | uniq | grep -v '^#' > {output.buscocontiglist} || true
+		seqtk subseq {input.assemblyfasta} {output.buscocontiglist} > {output.fasta}
+		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
+		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
+		comm -12 <(sort {input.unmapped}) <(cut -f2 {output.reads} | tr ',' '\n' | sort | uniq) > {output.reads_unmapped}
+		seqtk subseq {input.krakenfa} {output.reads_unmapped} > {output.readsfasta}
+		"""
+
+rule RunBuscoReads:
+	"""
+	Detect number of BUSCO genes per contig
+	"""
+	input:
+		circgenome = "{workingdirectory}/{genus}/kraken.fa",
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
+	params:
+		buscodir = directory("{workingdirectory}/{genus}/buscoReads"),
+		genus = "{genus}",
+		workingdirectory = "{workingdirectory}"
+	output:
+		renamedfa = "{workingdirectory}/{genus}/kraken.renamed.fa",
+		buscodbs = "{workingdirectory}/{genus}/info_dbs_reads.txt",
+		buscoini = "{workingdirectory}/{genus}/config_busco_reads.ini",
+		completed = "{workingdirectory}/{genus}/buscoReads/done.txt",
+	conda: "envs/busco.yaml"
+	threads:
+		10
+	shell:
+		"""
+		if [ -s {input.circgenome} ]; then
+			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} > {output.renamedfa}
+			busco --list-datasets > {output.buscodbs}
+			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+			busco --config {output.buscoini} -f
+		else
+			touch {output.buscodbs}
+			touch {output.buscoini}
 		fi
 		touch {output.completed}
 		"""

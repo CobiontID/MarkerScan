@@ -43,6 +43,8 @@ for filename in glob.glob(dirname+'/run_*/full_table.tsv'):
     k.close()
 
 contig_assembly={}
+if args.assinf.endswith('fasta'):
+    args.assinf=args.assinf+'.fai'
 k=open(args.assinf,'r')
 for line in k:
     if not line.startswith('#') and not 'NOT COMPLETE' in line:

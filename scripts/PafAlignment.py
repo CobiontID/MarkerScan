@@ -62,7 +62,7 @@ for record in f:
         endread=int(readlen)-int(stop)
         typemapping=record.split('\t')[12].split(':')[2]
         print(readname+'\t'+str(coverage))
-        if coverage >= 0.8 and typemapping == 'P':
+        if coverage >= 0.75 and typemapping == 'P':
             if contig not in alns:
                 alns[contig]={}
                 alns[contig]['length']=contiglen
@@ -89,7 +89,7 @@ for record in f:
                     coverage=float((stop-start)/(readlen-start))
                     print(readname)
                 print(coverage)
-                if coverage >= 0.8:
+                if coverage >= 0.75:
                     if contig not in alns:
                         alns[contig]={}
                         alns[contig]['length']=contiglen

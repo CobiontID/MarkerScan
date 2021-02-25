@@ -64,6 +64,13 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
             percentage=float(line.split('\t')[0])
     m.close()
     pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads ("+str(percentage)+"%) classified by Kraken as "+genusname+"." , ln=1, align="L")
+    for buscooutput in glob.glob(wd+'/'+genusname+'/buscoReads/busco/short_summary.specific.*.busco.txt'):
+        k=open(buscooutput,'r')
+        for line in k:
+            line=line.strip()
+            if line.startswith('C'):
+                pdf.cell(200, 6, txt=line, ln=1, align="L")
+        k.close()
     pdf.cell(200, 6,ln=1, align="L")
 
     completeness=wd+'/'+genusname+'/busco/completeness_per_contig.txt'
@@ -122,10 +129,17 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
         pdf.set_font("Arial", "B", size=10)
     pdf.cell(200, 6, txt="A total fraction of "+str(totalfraction)+"% of the classified kraken reads are removed." , ln=1, align="L")
     pdf.set_font("Arial", size=10)
-    putreadids=wd+'/'+genusname+'/'+genusname+'.nucmer.reads.txt'
-    num_lines_put = sum(1 for line in open(putreadids))
-    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" reads which are classified as putative contamination.", ln=1, align="L")
-
     
+    for buscooutput in glob.glob(wd+'/'+genusname+'/buscoAssembly/busco/short_summary.specific.*.busco.txt'):
+        k=open(buscooutput,'r')
+        for line in k:
+            line=line.strip()
+            if line.startswith('C'):
+                pdf.cell(200, 6, txt=line, ln=1, align="L")
+        k.close()
+    pdf.cell(200, 6,ln=1, align="L")
+    putreadids=wd+'/'+genusname+'/'+genusname+'.assembly.unmapped.reads'
+    num_lines_put = sum(1 for line in open(putreadids))
+    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" reads which are classified as putative contamination.", ln=1, align="L")    
 
 pdf.output(args.out)
