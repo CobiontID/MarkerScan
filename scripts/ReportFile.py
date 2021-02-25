@@ -12,6 +12,28 @@ parser.add_argument("-r", type=str, action='store', dest='rep', help='define rem
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 args = parser.parse_args()
 
+def calculate_N50(list_of_lengths):
+    """Calculate N50 for a sequence of numbers.
+ 
+    Args:
+        list_of_lengths (list): List of numbers.
+ 
+    Returns:
+        float: N50 value.
+ 
+    """
+    tmp = []
+    for tmp_number in set(list_of_lengths):
+            tmp += [tmp_number] * list_of_lengths.count(tmp_number) * tmp_number
+    tmp.sort()
+ 
+    if (len(tmp) % 2) == 0:
+        median = (tmp[int(len(tmp) / 2) - 1] + tmp[int(len(tmp) / 2)]) / 2
+    else:
+        median = tmp[int(len(tmp) / 2)]
+ 
+    return median
+
 pdf = FPDF()
 pdf.add_page()
 
@@ -129,7 +151,37 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
         pdf.set_font("Arial", "B", size=10)
     pdf.cell(200, 6, txt="A total fraction of "+str(totalfraction)+"% of the classified kraken reads are removed." , ln=1, align="L")
     pdf.set_font("Arial", size=10)
-    
+    pdf.cell(200, 6,ln=1, align="L")
+
+    pdf.set_font("Arial", "U", size=10)
+    pdf.cell(200, 6, txt="Hifiasm assembly", ln=1, align="L")
+    pdf.set_font("Arial", size=10)
+    buscocontigs_asm= wd + '/' + genusname + '/' + genusname + '.Assembly.contigs.txt'
+    buscocontigs=[]
+    l=open(buscocontigs_asm,'r')
+    for line in l:
+        line=line.strip()
+        buscocontigs.append(line)
+    l.close()
+    assemblyfile = wd + '/' + genusname + '/hifiasm/hifiasm.p_ctg.fasta.fai'
+    num_contigs_hifiasm = sum(1 for line in open(assemblyfile))
+    lengths=[]
+    totallen=0
+    totallenbusco=0
+    l=open(assemblyfile,'r')
+    for line in l:
+        idname=line.split('\t')[0]
+        length=int(line.split('\t')[1])
+        if idname in buscocontigs:
+            totallenbusco=totallenbusco+length
+        totallen=totallen+length
+        lengths.append(length)
+    l.close()
+    N50=calculate_N50(lengths)
+    kblenN50="{:.2f}".format(float(N50/1000))+"kb"
+    mblen="{:.2f}".format(float(totallen/1000000))+"Mb"
+    b_mblen="{:.2f}".format(float(totallenbusco/1000000))+"Mb"
+    pdf.cell(200, 6, txt="Hifiasm assembled "+str(num_contigs_hifiasm)+" contigs with an N50 of "+kblenN50+" and a total length of "+mblen+".", ln=1, align="L")
     for buscooutput in glob.glob(wd+'/'+genusname+'/buscoAssembly/busco/short_summary.specific.*.busco.txt'):
         k=open(buscooutput,'r')
         for line in k:
@@ -137,9 +189,9 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
             if line.startswith('C'):
                 pdf.cell(200, 6, txt=line, ln=1, align="L")
         k.close()
-    pdf.cell(200, 6,ln=1, align="L")
     putreadids=wd+'/'+genusname+'/'+genusname+'.assembly.unmapped.reads'
     num_lines_put = sum(1 for line in open(putreadids))
-    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" reads which are classified as putative contamination.", ln=1, align="L")    
+    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
+    pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    
 
 pdf.output(args.out)
