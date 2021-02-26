@@ -733,13 +733,13 @@ rule RunBuscoAssembly:
 		circgenome = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
-		donefile = "{workingdirectory}/{genus}/buscoReads/done.txt"
 	params:
 		buscodir = directory("{workingdirectory}/{genus}/buscoAssembly")
 	output:
 		buscodbs = "{workingdirectory}/{genus}/info_dbs_assembly.txt",
 		buscoini = "{workingdirectory}/{genus}/config_busco_assembly.ini",
-		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt"
+		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
+		readfile = "{workingdirectory}/{genus}/buscoReads.txt"
 	conda: "envs/busco.yaml"
 	threads:
 		10
@@ -749,6 +749,8 @@ rule RunBuscoAssembly:
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f
+			touch {output.completed}
+			python {scriptdir}/ParseBuscoTableMappingRead.py -c {output.donefile} -c {output.convtable} -o {output.readfile}
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
@@ -790,7 +792,8 @@ rule Map2AssemblyHifiasm:
 		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
 		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads",
-		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.overview.txt"
+		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.overview.txt",
+		readfile = "{workingdirectory}/{genus}/buscoReads.txt"
 	output:
 		summary = "{workingdirectory}/{genus}/buscoAssembly/completeness_per_contig.txt",
 		buscocontiglist = "{workingdirectory}/{genus}/{genus}.buscoAssembly.contigs.txt",
@@ -801,7 +804,9 @@ rule Map2AssemblyHifiasm:
 		mapping = "{workingdirectory}/{genus}/{genus}.assembly.ctgs",
 		reads = "{workingdirectory}/{genus}/{genus}.assembly.reads",
 		reads_unmapped = "{workingdirectory}/{genus}/{genus}.assembly.unmapped.reads",
-		readsfasta = "{workingdirectory}/{genus}/{genus}.putative_reads.fa"
+		readsfasta = "{workingdirectory}/{genus}/{genus}.putative_reads.fa",
+		busco_assembly = "{workingdirectory}/{genus}/buscoReadsAssembly.txt",
+		busco_assembly_hifi = "{workingdirectory}/{genus}/buscoReadsAssemblyHifi.txt"
 	threads: 10
 	conda: "envs/minimap.yaml"
 	shell:
@@ -819,7 +824,9 @@ rule Map2AssemblyHifiasm:
 		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
 		comm -12 <(sort {input.unmapped}) <(cut -f2 {output.reads} | tr ',' '\n' | sort | uniq) > {output.reads_unmapped}
-		seqtk subseq {input.krakenfa} {output.reads_unmapped} > {output.readsfasta}
+		comm -12 <(sort {input.unmapped}) <(sort {input.readfile}) > {output.busco_assembly}
+		cat {output.reads_unmapped} {output.busco_assembly} | sort | uniq > {output.busco_assembly_hifi}
+		seqtk subseq {input.krakenfa} {output.busco_assembly_hifi} > {output.readsfasta}
 		"""
 
 rule RunBuscoReads:
@@ -836,6 +843,7 @@ rule RunBuscoReads:
 		workingdirectory = "{workingdirectory}"
 	output:
 		renamedfa = "{workingdirectory}/{genus}/kraken.renamed.fa",
+		convtable = "{workingdirectory}/{genus}/kraken.convtable.txt",
 		buscodbs = "{workingdirectory}/{genus}/info_dbs_reads.txt",
 		buscoini = "{workingdirectory}/{genus}/config_busco_reads.ini",
 		completed = "{workingdirectory}/{genus}/buscoReads/done.txt",
@@ -845,11 +853,13 @@ rule RunBuscoReads:
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} > {output.renamedfa}
+			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {input.convtable} > {output.renamedfa}
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f
-		else
+		else 
+			touch {output.renamedfa}
+			touch {output.convtable}
 			touch {output.buscodbs}
 			touch {output.buscoini}
 		fi
