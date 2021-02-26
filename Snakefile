@@ -712,8 +712,12 @@ rule Hifiasm:
 		fi
 		if [ -s {input.krakenfa} ]; then
 			hifiasm -o {params.assemblyprefix} -t {threads} {input.krakenfa} -D 10 -l 1 -s 0.999
-			awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
-			faidx {output.fasta}
+			if [ -s {output.gfa} ]; then
+				awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
+				faidx {output.fasta}
+			else
+				touch {output.fasta}
+			fi 
 		else
 			touch {output.gfa} 
 			touch {output.fasta} 
@@ -802,9 +806,14 @@ rule Map2AssemblyHifiasm:
 	conda: "envs/minimap.yaml"
 	shell:
 		"""
-		python {scriptdir}/ParseBuscoTableMapping.py -d {input.completed} -i {input.assemblyfasta} -o {output.summary} 
+		if [ -s {input.assemblyfasta} ]; then
+			python {scriptdir}/ParseBuscoTableMapping.py -d {input.completed} -i {input.assemblyfasta} -o {output.summary} 
+			grep -v 'NOT COMPLETE' {input.nucmercontigs} | cut -f1 | sort | uniq > {output.nucmercontiglist} || true
+		else
+			touch {output.nucmercontiglist} 
+			touch {output.summary}
+		fi
 		cut -f1 {output.summary} | sort | uniq | grep -v '^#' > {output.buscocontiglist} || true
-		grep -v 'NOT COMPLETE' {input.nucmercontigs} | cut -f1 | sort | uniq > {output.nucmercontiglist} || true
 		cat {output.buscocontiglist} {output.nucmercontiglist} | sort | uniq > {output.contiglist}
 		seqtk subseq {input.assemblyfasta} {output.contiglist} > {output.fasta}
 		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}

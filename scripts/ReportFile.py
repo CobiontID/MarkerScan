@@ -164,20 +164,26 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
         buscocontigs.append(line)
     l.close()
     assemblyfile = wd + '/' + genusname + '/hifiasm/hifiasm.p_ctg.fasta.fai'
-    num_contigs_hifiasm = sum(1 for line in open(assemblyfile))
+    print(assemblyfile)
+    num_contigs_hifiasm = 0
+    if os.path.exists(assemblyfile) and os.path.getsize(assemblyfile) > 0:
+        num_contigs_hifiasm = sum(1 for line in open(assemblyfile))
     lengths=[]
     totallen=0
     totallenbusco=0
-    l=open(assemblyfile,'r')
-    for line in l:
-        idname=line.split('\t')[0]
-        length=int(line.split('\t')[1])
-        if idname in buscocontigs:
-            totallenbusco=totallenbusco+length
-        totallen=totallen+length
-        lengths.append(length)
-    l.close()
-    N50=calculate_N50(lengths)
+    if os.path.exists(assemblyfile) and os.path.getsize(assemblyfile) > 0:
+        l=open(assemblyfile,'r')
+        for line in l:
+            idname=line.split('\t')[0]
+            length=int(line.split('\t')[1])
+            if idname in buscocontigs:
+                totallenbusco=totallenbusco+length
+            totallen=totallen+length
+            lengths.append(length)
+        l.close()
+    N50=0
+    if len(lengths) > 0:
+        N50=calculate_N50(lengths)
     kblenN50="{:.2f}".format(float(N50/1000))+"kb"
     mblen="{:.2f}".format(float(totallen/1000000))+"Mb"
     b_mblen="{:.2f}".format(float(totallenbusco/1000000))+"Mb"
