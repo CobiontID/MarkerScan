@@ -739,7 +739,6 @@ rule RunBuscoAssembly:
 		buscodbs = "{workingdirectory}/{genus}/info_dbs_assembly.txt",
 		buscoini = "{workingdirectory}/{genus}/config_busco_assembly.ini",
 		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
-		readfile = "{workingdirectory}/{genus}/buscoReads.txt"
 	conda: "envs/busco.yaml"
 	threads:
 		10
@@ -749,8 +748,6 @@ rule RunBuscoAssembly:
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f
-			touch {output.completed}
-			python {scriptdir}/ParseBuscoTableMappingRead.py -c {output.donefile} -c {output.convtable} -o {output.readfile}
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
@@ -847,21 +844,25 @@ rule RunBuscoReads:
 		buscodbs = "{workingdirectory}/{genus}/info_dbs_reads.txt",
 		buscoini = "{workingdirectory}/{genus}/config_busco_reads.ini",
 		completed = "{workingdirectory}/{genus}/buscoReads/done.txt",
+		readfile = "{workingdirectory}/{genus}/buscoReads.txt"
 	conda: "envs/busco.yaml"
 	threads:
 		10
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {input.convtable} > {output.renamedfa}
+			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f
+			touch {output.completed}
+			python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
 		else 
 			touch {output.renamedfa}
 			touch {output.convtable}
 			touch {output.buscodbs}
 			touch {output.buscoini}
+			touch {output.readfile}
 		fi
 		touch {output.completed}
 		"""
