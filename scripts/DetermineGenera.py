@@ -38,7 +38,7 @@ def readNames(names_tax_file):
                     tax_names[node[1]] = node[0]
                     tax_names_reverse[node[0]] = node[1]
             if 'scientific' in line:
-                tax_names_sci[node[1]] = node[0]
+                tax_names_sci[node[0]] = node[1]
     return tax_names_reverse,tax_names,tax_names_sci
 
 '''
