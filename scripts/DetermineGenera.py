@@ -26,6 +26,7 @@ def readNames(names_tax_file):
     '''
     tax_names = {}
     tax_names_reverse= {}
+    tax_names_sci = {}
     with open(names_tax_file, 'r') as nodes_tax:
         for line in nodes_tax:
             node = [field.strip() for field in line.split('|')]
@@ -36,7 +37,9 @@ def readNames(names_tax_file):
                 else:
                     tax_names[node[1]] = node[0]
                     tax_names_reverse[node[0]] = node[1]
-    return tax_names_reverse,tax_names
+            if 'scientific' in line:
+                tax_names_sci[node[1]] = node[0]
+    return tax_names_reverse,tax_names,tax_names_sci
 
 '''
 def readNodes(nodes_tax_file):
@@ -136,7 +139,7 @@ def getTaxParent(tax_nodes, tax_types, taxid, ranking):
 
 # determine the lineage where your tax id belongs to (lineage taken until upper level = args.type)
 taxparents,taxtypes=readNodes(args.nodesfile)
-taxnames,namestax=readNames(args.namesfile)
+taxnames,namestax,taxnames_sci=readNames(args.namesfile)
 
 eukgens=[]
 prokgens=[]
@@ -159,6 +162,8 @@ for line in k:
     sciname=line.split(';')[-2]
     if 'environmental' in sciname:
         sciname=line.split(';')[-3]
+    if 'Hafnia-Obesumbacterium' in sciname:
+        sciname=sciname.split('-')[0]
     print(sciname)
     if sciname in namestax:
         #print(sciname)
@@ -199,7 +204,7 @@ for line in k:
                     prokgens.append(taxlevelname)
         elif lineage[namestax[sciname]] != None:
             print('DIFFERENT THAN FAMILY:'+sciname+ ' CLADE:'+cladelevelname)
-            taxlevelname=taxnames[lineage[namestax[sciname]][-1]]
+            taxlevelname=taxnames_sci[lineage[namestax[sciname]][-1]]
             if int(lineage[namestax[sciname]][-1]) != 1:
                 if 'Eukaryota' == rootlevelname:
                     cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
