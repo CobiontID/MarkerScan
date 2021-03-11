@@ -20,7 +20,7 @@ rule all:
 		expand("{pwd}/{name}.ProkSSU.reduced.fa",pwd=config["workingdirectory"], name=config["shortname"]),
 		expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),		
 		expand("{pwd}/kraken.tax.masked.ffn",pwd=config["workingdirectory"]),
-		expand("{pwd}/kraken.output",pwd=config["workingdirectory"]),
+		expand("{pwd}/kraken.report",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/putative_reads_removal.fa",pwd=config["workingdirectory"]),
@@ -598,7 +598,7 @@ rule RunBusco:
 		if [ -s {input.circgenome} ]; then
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
-			busco --config {output.buscoini} -f
+			busco --config {output.buscoini} -f || true
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
@@ -711,7 +711,7 @@ rule Hifiasm:
   			mkdir {output.dirname}
 		fi
 		if [ -s {input.krakenfa} ]; then
-			hifiasm -o {params.assemblyprefix} -t {threads} {input.krakenfa} -D 10 -l 1 -s 0.999
+			hifiasm -o {params.assemblyprefix} -t {threads} {input.krakenfa} -D 10 -l 1 -s 0.999 || true
 			if [ -s {output.gfa} ]; then
 				awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
 				faidx {output.fasta}
