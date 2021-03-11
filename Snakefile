@@ -900,6 +900,30 @@ rule RunBuscoReads:
 		touch {output.completed}
 		"""
 
+rule DrawCircos:
+	"""
+	Draw circos plot of re-assembly
+	"""
+	input:
+		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
+		contiglist = "{workingdirectory}/{genus}/{genus}.Assembly.contigs.txt",
+		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt"
+	params:
+		dirname = "{workingdirectory}/{genus}/"
+	output:
+		karyo = "{workingdirectory}/{genus}/circos.karyo",
+		cdsfile = "{workingdirectory}/{genus}/busco.cds.dat",
+		linkfile = "{workingdirectory}/{genus}/links.dat",
+		conffile = "{workingdirectory}/{genus}/circos.conf",
+		figure = "{workingdirectory}/{genus}/circos.png"
+	conda: "envs/circos.yaml"
+	shell:
+		"""
+		python {scriptdir}/input_circos.py -f {input.assemblyfasta} -c {input.contiglist} -b {input.completed} -k {output.karyo} -d {output.cdsfile} -l {output.linkfile}
+		python {scriptdir}/config_circos.py -k {output.karyo} -d {output.cdsfile} -l {output.linkfile} > {output.conffile}
+		circos -conf {output.conffile} -outputdir {params.dirname}
+		"""
+		
 def aggregate_assemblies(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
 	return expand ("{workingdirectory}/{genus}/{genus}.finalassembly.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
@@ -936,12 +960,24 @@ rule concatenate_reads_putative:
 	shell:
 		"cat {input} > {output}"
 
+def aggregate_figures(wildcards):
+	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/{genus}/circos.png", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
+
+rule concatenate_figures:
+	input:
+		aggregate_figures
+	output:
+		"{workingdirectory}/figures_done.txt"
+	shell:
+		"touch {output}"
 
 rule create_report:
 	input:
 		finalrem = "{workingdirectory}/final_reads_removal.fa",
 		krakenout = "{workingdirectory}/kraken.output",
-		putrem = "{workingdirectory}/putative_reads_removal.fa"
+		putrem = "{workingdirectory}/putative_reads_removal.fa",
+		figs = "{workingdirectory}/figures_done.txt"
 	output:
 		rep = "{workingdirectory}/{shortname}.report.pdf"
 	conda: "envs/fpdf.yaml"
