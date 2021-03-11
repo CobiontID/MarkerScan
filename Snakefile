@@ -261,6 +261,19 @@ rule ClassifySSU:
 		fi
 		"""
 
+rule MapAllReads2Assembly:
+	output:
+		paffile = "{workingdirectory}/AllReadsGenome.paf",
+		mapping = "{workingdirectory}/AllReadsGenome.ctgs",
+		reads = "{workingdirectory}/AllReadsGenome.reads",
+	threads: 10
+	conda: "envs/minimap.yaml"
+	shell:
+		"""
+		minimap2 -x map-pb -t {threads} {genome} {reads}  > {output.paffile}
+		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
+		"""
+
 checkpoint GetGenera:
 	"""
 	Get genera which were detected in SILVA DB 16 screen
@@ -690,12 +703,32 @@ rule ClusterBusco:
 		fi
 		"""
 
+rule AddMappingReads:
+	"""
+	Add all reads mapping to contigs detected in Map2Assembly
+	"""
+	input:
+		readsmap = "{workingdirectory}/AllReadsGenome.reads",
+		mapping = "{workingdirectory}/{genus}/{genus}.ctgs",
+		krakenfa = "{workingdirectory}/{genus}/kraken.reads"
+	output:
+		readslist = "{workingdirectory}/{genus}/{genus}.allreads",
+		finalreads = "{workingdirectory}/{genus}/{genus}.finalreads",
+		finalreadfasta = "{workingdirectory}/{genus}/{genus}.finalreads.fa"
+	conda: "envs/seqtk.yaml"
+	shell:
+		"""
+		python {scriptdir}/MappedContigs.py -m {input.mapping} -r {input.readsmap} > {output.readslist}
+		cat {output.readslist} {input.krakenfa} | sort | uniq > {output.finalreads}
+		seqtk subseq {reads} {output.finalreads} > {output.finalreadfasta}
+ 		"""
+
 rule Hifiasm:
 	"""
 	Run hifiasm assembly on kraken classfied reads
 	"""
 	input:
-		krakenfa = "{workingdirectory}/{genus}/kraken.fa"
+		finalreadfasta = "{workingdirectory}/{genus}/{genus}.finalreads.fa"
 	params:
 		assemblyprefix = "{workingdirectory}/{genus}/hifiasm/hifiasm"
 	output:
@@ -710,8 +743,8 @@ rule Hifiasm:
 		if [ ! -d {output.dirname} ]; then
   			mkdir {output.dirname}
 		fi
-		if [ -s {input.krakenfa} ]; then
-			hifiasm -o {params.assemblyprefix} -t {threads} {input.krakenfa} -D 10 -l 1 -s 0.999 || true
+		if [ -s {input.finalreadfasta} ]; then
+			hifiasm -o {params.assemblyprefix} -t {threads} {input.finalreadfasta} -D 10 -l 1 -s 0.999 || true
 			if [ -s {output.gfa} ]; then
 				awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
 				faidx {output.fasta}
@@ -785,7 +818,7 @@ rule NucmerRefSeqHifiasm:
 
 rule Map2AssemblyHifiasm:
 	input:
-		krakenfa = "{workingdirectory}/{genus}/kraken.fa",
+		krakenfa = "{workingdirectory}/{genus}/{genus}.finalreads.fa",
 		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
 		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads",
@@ -831,7 +864,7 @@ rule RunBuscoReads:
 	Detect number of BUSCO genes per contig
 	"""
 	input:
-		circgenome = "{workingdirectory}/{genus}/kraken.fa",
+		circgenome = "{workingdirectory}/{genus}/{genus}.finalreads.fa",
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
 	params:

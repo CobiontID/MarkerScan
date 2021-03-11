@@ -61,7 +61,7 @@ for record in f:
         ending=int(contiglen)-int(record.split('\t')[8])
         endread=int(readlen)-int(stop)
         typemapping=record.split('\t')[12].split(':')[2]
-        print(readname+'\t'+str(coverage))
+        #print(readname+'\t'+str(coverage))
         if coverage >= 0.75 and typemapping == 'P':
             if contig not in alns:
                 alns[contig]={}
@@ -76,7 +76,7 @@ for record in f:
             if ending < 20 or int(record.split('\t')[7]) < 20:
                 strand=record.split('\t')[4]
                 coverage=0
-                print(readname)
+                #print(readname)
                 #print(str(float(stop/readlen))+'\t'+str(start))
                 if int(record.split('\t')[7]) < 20 and strand == '+' and float(stop/readlen) > 0.95:
                     coverage=float((stop-start)/(readlen-start))
@@ -84,11 +84,11 @@ for record in f:
                     coverage=float((stop-start)/stop)
                 elif int(record.split('\t')[7]) < 20 and strand == '-' and float(start/readlen) < 0.05:
                     coverage=float((stop-start)/stop)
-                    print(readname)
+                    #print(readname)
                 elif ending < 20 and strand == '-' and float(stop/readlen) > 0.95:
                     coverage=float((stop-start)/(readlen-start))
-                    print(readname)
-                print(coverage)
+                    #print(readname)
+                #print(coverage)
                 if coverage >= 0.75:
                     if contig not in alns:
                         alns[contig]={}
@@ -114,10 +114,10 @@ for ctg in alns:
         finalcontigs.append(ctg)
         #totalreads.extend(alns[ctg]['reads'])
         k.write(ctg+'\t'+str(alns[ctg]['length'])+'\t'+str(percentagectg)+'%\n')
-        print(finalcoords)
+        #print(finalcoords)
     else:
         k.write('NOT COMPLETE:\t'+ctg+'\t'+str(alns[ctg]['length'])+'\t'+str(percentagectg)+'%\n')
-        print(finalcoords)
+        #print(finalcoords)
 k.close()
 
 #s=set(totalreads)
