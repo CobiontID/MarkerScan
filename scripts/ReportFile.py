@@ -199,5 +199,6 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     num_lines_put = sum(1 for line in open(putreadids))
     pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
     pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    
-
+    imagename = wd + '/' + genusname + '/circos.png'
+    pdf.image(imagename,w=120,h=120)
 pdf.output(args.out)

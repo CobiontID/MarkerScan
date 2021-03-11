@@ -1,0 +1,6 @@
+name: circos
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - circos
