@@ -9,6 +9,7 @@ import glob
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", type=str, action='store', dest='out',help='define report file')
 parser.add_argument("-r", type=str, action='store', dest='rep', help='define removed reads list')
+parser.add_argument("-d", type=str, action='store', dest='datadir', help='define data dir')
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 args = parser.parse_args()
 
@@ -33,6 +34,9 @@ def calculate_N50(list_of_lengths):
         median = tmp[int(len(tmp) / 2)]
  
     return median
+
+def Average(lst): 
+    return sum(lst) / len(lst) 
 
 pdf = FPDF()
 pdf.add_page()
@@ -198,7 +202,18 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     putreadids=wd+'/'+genusname+'/'+genusname+'.assembly.unmapped.reads'
     num_lines_put = sum(1 for line in open(putreadids))
     pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
-    pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    
+    pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    #
+    refseqfile=args.datadir+'/'+genusname+'/'+genusname+'.refseq.log'
+    genomesize=[]
+    k=open(refseqfile,'r')
+    for line in k:
+        line=line.strip()
+        if not line.startswith('/') and not line.startswith('Genomes for') and not line.startswith('Number of'):
+            genomesize.append(int(line.split('\t')[1]))
+    k.close()
+    average = Average(genomesize)
+    mblen="{:.2f}".format(float(average/1000000))+"Mb"
+    pdf.cell(200, 6, txt="The mean genomesize for the family "+str(genusname)+" is "+str(mblen), ln=1, align="L") 
     imagename = wd + '/' + genusname + '/circos.png'
     pdf.image(imagename,w=120,h=120)
 pdf.output(args.out)

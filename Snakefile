@@ -978,11 +978,13 @@ rule create_report:
 		krakenout = "{workingdirectory}/kraken.output",
 		putrem = "{workingdirectory}/putative_reads_removal.fa",
 		figs = "{workingdirectory}/figures_done.txt"
+	params:
+		datadir = expand("{datadir}/genera/",datadir=config["datadir"])
 	output:
 		rep = "{workingdirectory}/{shortname}.report.pdf"
 	conda: "envs/fpdf.yaml"
 	shell:
 		"""
-		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem}
+		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem} -d {params.datadir}
 		gzip {input.krakenout}
 		"""
