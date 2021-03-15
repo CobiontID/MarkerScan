@@ -384,8 +384,14 @@ rule concatenate_kraken_input:
 	output:
 		"{workingdirectory}/kraken.tax.ffn"
 	shell:
-		"cat {input} > {output}"
-
+		"""
+		if [ -n "{input}" ]
+		then
+			cat {input} > {output}
+		else
+			touch {output}
+		fi
+		"""
 
 rule DownloadGenusRel:
 	"""
@@ -446,7 +452,12 @@ rule concatenate_masking:
 		"{workingdirectory}/kraken.tax.masked.ffn"
 	shell:
 		"""
-		cat {input} > {output}
+		if [ -n "{input}" ]
+		then
+			cat {input} > {output}
+		else
+			touch {output}
+		fi
 		"""
 
 checkpoint SplitFastaRel:
@@ -517,6 +528,8 @@ rule CreateKrakenDB:
 			kraken2-build --threads {threads} --add-to-library {input.krakenffnall} --db {output.krakendb} --no-masking
 			kraken2-build --threads {threads} --add-to-library {input.krakenffnrel} --db {output.krakendb} --no-masking
 			kraken2-build --threads {threads} --build --kmer-len 50 --db {output.krakendb}
+		else
+			mkdir {output.krakendb}
 		fi
 		rm -r {input.splitdirrel}
 		rm -r {input.splitdir}
@@ -548,6 +561,9 @@ rule RunKraken:
 			fi
 			rm -r {input.krakendb}/taxonomy/*
 			rm -r {input.krakendb}/library/added/*
+		else
+			touch {output.krakenout}
+			touch {output.krakenreport}
 		fi
 		"""
 
@@ -934,7 +950,14 @@ rule concatenate_asm:
 	output:
 		"{workingdirectory}/final_assembly.fa"
 	shell:
-		"cat {input} > {output}"
+		"""
+		if [ -n "{input}" ]
+		then
+			cat {input} > {output}
+		else
+			touch {output}
+		fi
+		"""
 
 def aggregate_readsets(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
@@ -946,7 +969,14 @@ rule concatenate_reads:
 	output:
 		"{workingdirectory}/final_reads_removal.fa"
 	shell:
-		"cat {input} > {output}"
+		"""
+		if [ -n "{input}" ]
+		then
+			cat {input} > {output}
+		else
+			touch {output}
+		fi
+		"""
 
 def aggregate_readsets_putative(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
@@ -958,7 +988,14 @@ rule concatenate_reads_putative:
 	output:
 		"{workingdirectory}/putative_reads_removal.fa"
 	shell:
-		"cat {input} > {output}"
+		"""
+		if [ -n "{input}" ]
+		then
+			cat {input} > {output}
+		else
+			touch {output}
+		fi
+		"""
 
 def aggregate_figures(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
