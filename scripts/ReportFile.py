@@ -215,5 +215,6 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     mblen="{:.2f}".format(float(average/1000000))+"Mb"
     pdf.cell(200, 6, txt="The mean genomesize for the family "+str(genusname)+" is "+str(mblen), ln=1, align="L") 
     imagename = wd + '/' + genusname + '/circos.png'
-    pdf.image(imagename,w=120,h=120)
+    if os.path.getsize(imagename) > 0:
+        pdf.image(imagename,w=120,h=120)
 pdf.output(args.out)

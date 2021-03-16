@@ -935,9 +935,17 @@ rule DrawCircos:
 	conda: "envs/circos.yaml"
 	shell:
 		"""
-		python {scriptdir}/input_circos.py -f {input.assemblyfasta} -c {input.contiglist} -b {input.completed} -k {output.karyo} -d {output.cdsfile} -l {output.linkfile}
-		python {scriptdir}/config_circos.py -k {output.karyo} -d {output.cdsfile} -l {output.linkfile} > {output.conffile}
-		circos -conf {output.conffile} -outputdir {params.dirname}
+		if [ -s {input.contiglist} ]; then
+			python {scriptdir}/input_circos.py -f {input.assemblyfasta} -c {input.contiglist} -b {input.completed} -k {output.karyo} -d {output.cdsfile} -l {output.linkfile}
+			python {scriptdir}/config_circos.py -k {output.karyo} -d {output.cdsfile} -l {output.linkfile} > {output.conffile}
+			circos -conf {output.conffile} -outputdir {params.dirname}
+		else
+			touch {output.karyo}
+			touch {output.cdsfile}
+			touch {output.linkfile}
+			touch {output.conffile}
+			touch {output.figure}
+		fi
 		"""
 		
 def aggregate_assemblies(wildcards):
