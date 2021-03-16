@@ -26,6 +26,6 @@ with open(results.out,"w") as f:
                 #print(coords[seq_record.id][0]+'\t'+coords[seq_record.id][1])
                 if int(coords[seq_record.id][0]) > int(coords[seq_record.id][1]):
                     print(str(seq_record.id))
-                    f.write(str(seq_record.seq[int(coords[seq_record.id][1]):int(coords[seq_record.id][0])].reverse_complement())+ "\n")
+                    f.write(str(seq_record.seq[(int(coords[seq_record.id][1])-1):(int(coords[seq_record.id][0])-1)].reverse_complement())+ "\n")
                 else:
                     f.write(str(seq_record.seq[int(coords[seq_record.id][0]):int(coords[seq_record.id][1])]) + "\n")
