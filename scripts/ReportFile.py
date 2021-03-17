@@ -42,7 +42,7 @@ pdf = FPDF()
 pdf.add_page()
 
 wd=os.path.dirname(args.rep)
-shortname=wd.split('/')[-1]
+shortname=args.out.split('.report.pdf')[0].split('/')[-1]
 totallines=0
 ctgs=[]
 for filename in glob.glob(wd+'/*readslist'):
