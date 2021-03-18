@@ -32,7 +32,7 @@ def readNames(names_tax_file):
 g=open(results.output,'w')
 taxnames=readNames(results.namesfile)
 out=open(results.output,'w')
-files = glob.glob(results.directory + '/*.fasta', recursive=True)
+files = glob.glob(results.directory + '/*.fasta')
 for fastafile in files:
     print(fastafile)
     f =open(fastafile,'r')

@@ -33,7 +33,7 @@ def readNames(names_tax_file):
 
 taxnames=readNames(results.namesfile)
 out=open(results.output,'w')
-files = glob.glob(results.directory + '/*.gbff.gz', recursive=True)
+files = glob.glob(results.directory + '/*.gbff.gz')
 for gfffile in files:
     print(gfffile)
     with gzip.open(gfffile, "rt") as fh:

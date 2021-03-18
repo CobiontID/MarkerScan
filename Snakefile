@@ -195,13 +195,12 @@ rule DownloadApicomplexa:
         	if [ $before -ge $timestampdate ]; then
                 rm {datadir}/apicomplexa/*
 				esearch -db nucleotide -query "apicoplast[Title] complete genome[Title] txid5794 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/apicoplast.fasta
-				esearch -db nucleotide -query "mitochondrion[Title] complete genome[Title] txid75740 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/mito.fasta
+				esearch -db nucleotide -query "mitochondrion[Title] complete genome[Title] txid5794 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/mito.fasta
 				python {scriptdir}/ApicomplexaLineage.py -d {datadir}/apicomplexa/ -na {input.taxnames} -o {datadir}/apicomplexa/apicomplexa.lineage.ffn
 			fi
 		else
-			rm {datadir}/apicomplexa/*
 			esearch -db nucleotide -query "apicoplast[Title] complete genome[Title] txid5794 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/apicoplast.fasta
-			esearch -db nucleotide -query "mitochondrion[Title] complete genome[Title] txid75740 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/mito.fasta
+			esearch -db nucleotide -query "mitochondrion[Title] complete genome[Title] txid5794 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/mito.fasta
 			python {scriptdir}/ApicomplexaLineage.py -d {datadir}/apicomplexa/ -na {input.taxnames} -o {datadir}/apicomplexa/apicomplexa.lineage.ffn
 		fi	
 		touch {output.done_api}
