@@ -23,6 +23,7 @@ rule all:
 		expand("{pwd}/kraken.report",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
+		expand("{pwd}/final_reads_target.fa.gz",pwd=config["workingdirectory"]),
 		expand("{pwd}/putative_reads_removal.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"])
 
@@ -983,6 +984,28 @@ rule concatenate_reads:
 			cat {input} > {output}
 		else
 			touch {output}
+		fi
+		"""
+
+def aggregate_readsetslist(wildcards):
+	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
+	return expand ("{workingdirectory}/{genus}/{genus}.readsids.txt", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
+
+rule concatenate_readlist:
+	input:
+		aggregate_readsetslist
+	output:
+		cont = "{workingdirectory}/final_reads_removal.txt",
+		target = "{workingdirectory}/final_reads_target.fa.gz"
+	shell:
+		"""
+		if [ -n "{input}" ]
+		then
+			cat {input} > {output.cont}
+			zcat {reads} | paste - - - - | grep -v -F -f {output.cont} | tr "\t" "\n" | gzip > {output.target}
+		else
+			touch {output.cont}
+			cp {reads} {output.target}
 		fi
 		"""
 
