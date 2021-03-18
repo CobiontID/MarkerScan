@@ -174,6 +174,39 @@ rule DownloadOrganelles:
 		touch {output.doneorganelles}
 		"""
 
+rule DownloadApicomplexa:
+	"""
+	Download gff flatfiles and fna of plastid and mitochondria from ftp release NCBI
+	"""
+	input:
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"])
+	output:
+		done_api = "{workingdirectory}/apicomplexa_download.done.txt"
+	conda:	"envs/eutils.yaml"
+	shell:
+		"""
+		if [ ! -d {datadir}/apicomplexa ]; then
+  			mkdir {datadir}/apicomplexa
+		fi
+		if [ -s {datadir}/apicomplexa/apicomplexa.lineage.ffn ]; then
+        	before=$(date -d 'today - 30 days' +%s)
+        	timestamp=$(stat -c %y {datadir}/organelles/apicomplexa.lineage.ffn | cut -f1 -d ' ')
+        	timestampdate=$(date -d $timestamp +%s)
+        	if [ $before -ge $timestampdate ]; then
+                rm {datadir}/apicomplexa/*
+				esearch -db nucleotide -query "apicoplast[Title] complete genome[Title] txid5794 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/apicoplast.fasta
+				esearch -db nucleotide -query "mitochondrion[Title] complete genome[Title] txid75740 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/mito.fasta
+				python {scriptdir}/ApicomplexaLineage.py -d {datadir}/apicomplexa/ -na {input.taxnames} -o {datadir}/apicomplexa/apicomplexa.lineage.ffn
+			fi
+		else
+			rm {datadir}/apicomplexa/*
+			esearch -db nucleotide -query "apicoplast[Title] complete genome[Title] txid5794 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/apicoplast.fasta
+			esearch -db nucleotide -query "mitochondrion[Title] complete genome[Title] txid75740 [Organism]" | efilter -source insd | efetch -format fasta > {datadir}/apicomplexa/mito.fasta
+			python {scriptdir}/ApicomplexaLineage.py -d {datadir}/apicomplexa/ -na {input.taxnames} -o {datadir}/apicomplexa/apicomplexa.lineage.ffn
+		fi	
+		touch {output.done_api}
+		"""
+
 rule DownloadNCBITaxonomy:
 	"""
 	Download current version of NCBI taxonomy
@@ -294,7 +327,8 @@ checkpoint GetGenera:
 		python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {input.taxnames} -no {input.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}'
 		while read p
 		do
-			echo "Eukaryota" > {output.generadir}/genus.$p.txt
+			shortname=`echo $p | cut -d, -f1`	
+			echo $p > {output.generadir}/genus.$shortname.txt
 		done < {output.generadir}/euk.SSU.genera_taxonomy.txt
 		while read p
 		do
@@ -311,7 +345,8 @@ rule DownloadRefSeqGenus:
 	"""
 	input:
 		generafiles = "{workingdirectory}/genera/genus.{genus}.txt",
-		doneorganelles = "{workingdirectory}/organelles_download.done.txt"
+		doneorganelles = "{workingdirectory}/organelles_download.done.txt",
+		done_api = "{workingdirectory}/apicomplexa_download.done.txt"
 	params:
 		taxname = "{genus}"
 	output:
@@ -323,6 +358,7 @@ rule DownloadRefSeqGenus:
 		krakenffnall = "{workingdirectory}/genera/{genus}.kraken.tax.ffn",
 		orglist = "{workingdirectory}/genera/{genus}.organelles.list",
 		orgfasta = "{workingdirectory}/genera/{genus}.organelles.ffn",
+		apifile = "{workingdirectory}/genera/{genus}.additional.ffn",
 		donefile = "{workingdirectory}/{genus}.refseqdownload.done.txt"
 	shell:
 		"""
@@ -364,14 +400,18 @@ rule DownloadRefSeqGenus:
 				touch {datadir}/genera/{params.taxname}.kraken.tax.ffn
 			fi
 		fi
+		touch {output.apifile}
 		if grep -q Eukaryota {input.generafiles}; then
 			grep {params.taxname} {datadir}/organelles/organelles.lineage.txt > {output.orglist} || true
 			python {scriptdir}/FastaSelect.py -f {datadir}/organelles/organelles.fna -l {output.orglist} -o {output.orgfasta}
+			if grep -q Apicomplexa {input.generafiles}; then
+				cp {datadir}/apicomplexa/apicomplexa.lineage.ffn {output.apifile}
+			fi
 		else
 			touch {output.orglist}
 			touch {output.orgfasta}
 		fi
-		cat {datadir}/genera/{params.taxname}.kraken.tax.ffn {output.orgfasta} > {output.krakenffnall}
+		cat {datadir}/genera/{params.taxname}.kraken.tax.ffn {output.orgfasta} {output.apifile} > {output.krakenffnall}
 		touch {output.donefile}
 		"""
 

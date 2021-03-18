@@ -1,0 +1,6 @@
+name: eutils
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - entrez-direct
