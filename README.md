@@ -74,7 +74,7 @@ Moreover, also a re-assembly is done.
 2. Assembly is done using hifiasm: {workingdirectory}/{genus}/hifiasm/
 3. Busco on re-assembled contigs: {workingdirectory}/{genus}/buscoAssembly
 4. Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn against re-assembled contigs
-5. Map reads to re-assembled contigs: {workingdirectory}/{genus}/{genus}.putative_reads.fa
+5. Map reads to re-assembled contigs: {workingdirectory}/{genus}/{genus}.putative_reads.fa --> concatenated across families in **{workingdirectory}/putative_reads_removal.fa**
 6. Draw circos plot
 
 Combine all results and generate report file **{workingdirectory}/{shortname}.report.pdf**
