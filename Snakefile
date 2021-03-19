@@ -190,7 +190,7 @@ rule DownloadApicomplexa:
 		fi
 		if [ -s {datadir}/apicomplexa/apicomplexa.lineage.ffn ]; then
         	before=$(date -d 'today - 30 days' +%s)
-        	timestamp=$(stat -c %y {datadir}/organelles/apicomplexa.lineage.ffn | cut -f1 -d ' ')
+        	timestamp=$(stat -c %y {datadir}/apicomplexa/apicomplexa.lineage.ffn | cut -f1 -d ' ')
         	timestampdate=$(date -d $timestamp +%s)
         	if [ $before -ge $timestampdate ]; then
                 rm {datadir}/apicomplexa/*
@@ -692,7 +692,7 @@ rule NucmerRefSeqContigs:
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			nucmer --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
+			nucmer --maxmatch --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
 			show-coords -c -l -L 100 -r -T {output.nucmerdelta} > {output.nucmercoords}
 			python {scriptdir}/ParseNucmer.py -n {output.nucmercoords} -o {output.nucmercontigs}
 		else
@@ -861,7 +861,7 @@ rule NucmerRefSeqHifiasm:
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			nucmer --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
+			nucmer --maxmatch --delta {output.nucmerdelta} {input.circgenome} {input.refseqmasked}
 			show-coords -c -l -L 100 -r -T {output.nucmerdelta} > {output.nucmercoords}
 			python {scriptdir}/ParseNucmer.py -n {output.nucmercoords} -o {output.nucmercontigs}
 		else
