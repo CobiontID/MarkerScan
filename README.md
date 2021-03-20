@@ -28,7 +28,9 @@ SSUHMMfile: $SSU/SSU_Prok_Euk_Microsporidia.hmm
 ## Script to launch the pipeline
 
 I typically run the pipeline by running on 10 cores and 25Gb memory:
-run using: bsub -o snakemake.output.%J -e snakemake.error.%J -n 10 -R"select[mem>25000] rusage[mem=25000]" -M25000 ./run_snakemake.sh $configfile
+```
+bsub -o snakemake.output.%J -e snakemake.error.%J -n 10 -R"select[mem>25000] rusage[mem=25000]" -M25000 ./run_snakemake.sh $configfile
+```
 
 The run_snakemake.sh looks as follows:
 ```
