@@ -37,7 +37,7 @@ snakemake --configfile $1 --cores 10 --use-conda --conda-prefix $condaprefix
 
 ## Overview of the pipeline
 
-For now very little intermediate files are removed.
+For now very little intermediate files are removed. Once the pipeline is integrated, file removal will need to be optimized.
 
 1. Run nhmmer with SSU_Prok_Euk_Microsporidia.hmm across the draft assembly
 2. Extract coordinates of matches: "{workingdirectory}/{shortname}.ProkSSU.readsinfo"
@@ -48,12 +48,14 @@ For now very little intermediate files are removed.
 
 In the meantime some files are downloaded if necessary:
 1. Download all refseq organellar sequences from https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ and https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ and store in {datadir}/organelles if files not exist or older than 30 days
-2. Download all genbank organeller sequences for apicomplexans (common contaminant, but sequence information is rare) via e-utils and store in {datadir}/apicomplexa if files not exist or older than 30 days
+2. Download all genbank organellar sequences for apicomplexans (common contaminant, but sequence information is rare) via e-utils and store in {datadir}/apicomplexa if files not exist or older than 30 days
 3. Download NCBI taxonomy (both names.dmp/nodes.dmp and nucl_wgs.accession2taxid/nucl_gb.accession2taxid) if not latest version. Curl statement will download checksum file from ftp and compare download dates. Database is updated regularly, so downloading is often required.
 4. Download genomes for the closest relatives of the target species available. This step is not stored in {datadir} but in {workingdir}, so downloading will be performed for every sample. This step could be optimized if pipeline is going to be run for several closely related species (e.g. moths from same family). Next, this fasta file is split and masked using duskmasker. Outputfile: {workingdirectory}/kraken.relatives.masked.ffn.
 
 The following part of the pipeline will be done very every detected family in the 'metagenomic' composition of the sample.
 1. Download all available genomes (refseq if bacterial, all if eukaryotic) for the detected families and store in {datadir}/genera if files not exist or older than 30 days. Copy over to {workingdirectory}/genera. 
+
+As these steps all write their output to a shared directory, running several samples simultaneously could cause problems. Downloading genomes using the NCBI datasets tool could with several queries at once has also proven to be unstable.
 
 This is followed by these steps:
 1. All fasta files of the contaminant families are combined, split and masked using duskmasker. Now masking is done every time pipeline is run. This could be optimized if masking was already done when downloading. Result is in {workingdirectory}/kraken.tax.masked.ffn.
