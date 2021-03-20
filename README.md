@@ -2,15 +2,17 @@
 This repository contains a Snakemake pipeline which determines the species composition of the sample by SSU presence and seperates them accordingly. 
 
 ## Required input
-Please copy:
+Please clone this directory
 1. snakefile
 2. all scripts for the directory /scripts
-3. all yaml files containing information regarding external programs required to be downloaded by conda in /envs 
-4. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm 
+3. all yaml files containing information regarding external programs required to be downloaded by conda in /envs
+4. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm  
 
 to your location of choice.
 
-To run the pipeline a yaml file containing all external parameters is needed, an example is shown below.
+You also need to create a directory where to store db information that is commonly used while running different samples = datadir, contains the subdirectories: silva, busco_data, organelles, apicomplexa, taxonomy, genera.
+
+To run the pipeline a yaml file containing all external parameters needs to be created, an example is shown below.
 
 ```
 reads: /lustre/scratch116/tol/projects/darwin/sub_projects/cobiont_detection/pipeline/hmm_pipeline/readfiles/ilBlaLact1fasta.gz
@@ -25,9 +27,11 @@ SSUHMMfile: $SSU/SSU_Prok_Euk_Microsporidia.hmm
 
 ## Script to launch the pipeline
 
-```
-#run using: bsub -o snakemake.output.%J -e snakemake.error.%J -n 10 -R"select[mem>25000] rusage[mem=25000]" -M25000 ./run_snakemake.sh $configfile
+I typically run the pipeline by running on 10 cores and 25Gb memory:
+run using: bsub -o snakemake.output.%J -e snakemake.error.%J -n 10 -R"select[mem>25000] rusage[mem=25000]" -M25000 ./run_snakemake.sh $configfile
 
+The run_snakemake.sh looks as follows:
+```
 # make sure conda activate is available in script
 eval "$(conda shell.bash hook)"
 
