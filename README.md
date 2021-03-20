@@ -40,6 +40,8 @@ conda activate snakemake
 snakemake --configfile $1 --cores 10 --use-conda --conda-prefix $condaprefix
 ```
 
+Snakemake will automatically decide which rules it can run and spread the tasks over the given cores. Nonetheless I have set that it has to use 10 threads for certain tasks (hmmscan, classification SINA, readmapping, create krakendb, kraken2, busco, hifiasm)
+
 ## Overview of the pipeline
 
 For now very little intermediate files are removed. Once the pipeline is integrated, file removal will need to be optimized.
@@ -73,7 +75,7 @@ The following part of the pipeline will be done very every detected family in th
 2. Busco is run on the reads {workingdirectory}/{genus}/buscoReads/busco
 3. Kraken reads are mapped to draft assembly. Fully aligned contigs {workingdirectory}/{genus}/{genus}.ctgs and corresponding reads {workingdirectory}/{genus}/{genus}.reads
 4. Run Busco on these contigs. {workingdirectory}/{genus}/busco/busco
-5. Run Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn on these contigs. {workingdirectory}/{genus}/{genus}_vs_contigs.overview.txt
+5. Run Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn on these contigs. {workingdirectory}/{genus}/{genus}\_vs_contigs.overview.txt
 7. Combine these results and define certain set of reads to remove. {workingdirectory}/{genus}/{genus}.final_reads.fa --> concatenated across families in **{workingdirectory}/final_reads_removal.fa** and the remaining reads are in **{workingdirectory}/final_reads_target.fa.gz**.
 
 Moreover, also a re-assembly is done.
