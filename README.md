@@ -74,18 +74,18 @@ This is followed by these steps:
 
 The following part of the pipeline will be done very every detected family in the 'metagenomic' composition of the sample.
 1. Reads are extracted per bin. {workingdirectory}/{genus}/kraken.fa
-2. Busco is run on the reads {workingdirectory}/{genus}/buscoReads/busco
-3. Kraken reads are mapped to draft assembly. Fully aligned contigs {workingdirectory}/{genus}/{genus}.ctgs and corresponding reads {workingdirectory}/{genus}/{genus}.reads
-4. Run Busco on these contigs. {workingdirectory}/{genus}/busco/busco
-5. Run Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn on these contigs. {workingdirectory}/{genus}/{genus}\_vs_contigs.overview.txt
-7. Combine these results and define certain set of reads to remove. {workingdirectory}/{genus}/{genus}.final_reads.fa --> concatenated across families in **{workingdirectory}/final_reads_removal.fa** and the remaining reads are in **{workingdirectory}/final_reads_target.fa.gz**.
+2. Kraken reads are mapped to draft assembly. Fully aligned contigs {workingdirectory}/{genus}/{genus}.ctgs and corresponding reads {workingdirectory}/{genus}/{genus}.reads
+3. Run Busco on these contigs. {workingdirectory}/{genus}/busco/busco
+4. Run Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn on these contigs. {workingdirectory}/{genus}/{genus}\_vs_contigs.overview.txt
+5. Combine these results and define certain set of reads to remove. {workingdirectory}/{genus}/{genus}.final_reads.fa --> concatenated across families in **{workingdirectory}/final_reads_removal.fa** and the remaining reads are in **{workingdirectory}/final_reads_target.fa.gz**.
 
 Moreover, also a re-assembly is done.
 1. Reads of draft contigs which are not fully aligned are added to the kraken reads
-2. Assembly is done using hifiasm: {workingdirectory}/{genus}/hifiasm/
-3. Busco on re-assembled contigs: {workingdirectory}/{genus}/buscoAssembly
-4. Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn against re-assembled contigs
-5. Map reads to re-assembled contigs: {workingdirectory}/{genus}/{genus}.putative_reads.fa --> concatenated across families in **{workingdirectory}/putative_reads_removal.fa**
-6. Draw circos plot
+2. Busco is run on the reads {workingdirectory}/{genus}/buscoReads/busco
+3. Assembly is done using hifiasm: {workingdirectory}/{genus}/hifiasm/
+4. Busco on re-assembled contigs: {workingdirectory}/{genus}/buscoAssembly
+5. Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn against re-assembled contigs
+6. Map reads to re-assembled contigs: {workingdirectory}/{genus}/{genus}.putative_reads.fa --> concatenated across families in **{workingdirectory}/putative_reads_removal.fa**
+7. Draw circos plot
 
 Combine all results and generate report file **{workingdirectory}/{shortname}.report.pdf**
