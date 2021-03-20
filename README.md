@@ -3,9 +3,10 @@ This repository contains a Snakemake pipeline which determines the species compo
 
 ## Required input
 Please copy:
-1. all scripts for the directory /scripts
-2. all yaml files containing information regarding external programs required to be downloaded by conda in /envs 
-3. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm 
+1. snakefile
+2. all scripts for the directory /scripts
+3. all yaml files containing information regarding external programs required to be downloaded by conda in /envs 
+4. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm 
 
 to your location of choice.
 
