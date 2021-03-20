@@ -45,7 +45,7 @@ For now very little intermediate files are removed. Once the pipeline is integra
 3. Get SSU locus sequence: "{workingdirectory}/{shortname}.ProkSSU.fa" and collapse by 99% ID using cd-hit: "{workingdirectory}/{shortname}.ProkSSU.reduced.fa"
 4. Download SILVA DB if new version available on https://ftp.arb-silva.de/current/ARB_files/ into {datadir}/silva
 5. Classify SSU regions using SILVA. Taxonomy per sequence is found in "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax"
-6. Determine the species composition of sample and for which families the procedure continues
+6. Determine the species composition of sample and for which families the procedure continues, output in {workingdirectory}/genera
 
 In the meantime some files are downloaded if necessary:
 1. Download all refseq organellar sequences from https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ and https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ and store in {datadir}/organelles if files not exist or older than 30 days
