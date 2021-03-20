@@ -89,3 +89,4 @@ Moreover, also a re-assembly is done.
 7. Draw circos plot
 
 Combine all results and generate report file **{workingdirectory}/{shortname}.report.pdf**
+This is an example report file: [ilAriAges1.v1.report.pdf](https://github.com/CobiontID/Marker_pipeline/files/6175523/ilAriAges1.v1.report.pdf)
