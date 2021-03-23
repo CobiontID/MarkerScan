@@ -7,8 +7,10 @@ import os
 parser = argparse.ArgumentParser()
 parser.add_argument('--taxname', action="store", dest="tax", type=str, help='scientific name of species of interest')
 parser.add_argument('--dir', action="store", dest="dir", type=str, help='base directory')
+parser.add_argument('--dir2', action="store", dest="dir2", type=str, help='base data directory')
 parser.add_argument("-na", type=str, action='store', dest='namesfile', metavar='NAMES',help='NCBI names.dmp')
 parser.add_argument("-no", type=str, action='store', dest='nodesfile', metavar='NODES',help='NCBI nodes.dmp')
+parser.add_argument('-o', action="store", dest="out", type=str, help='out directory')
 parser.add_argument('--refseq', action="store", dest="refs", type=str, help='all or refseq database')
 args = parser.parse_args()
 
@@ -97,6 +99,7 @@ if args.tax in namestax:
     with open(str(args.dir)+"/log."+str(args.tax.replace(' ','_'))+".json", 'r') as f:
         distros_dict = json.load(f)
     if distros_dict:
+        os.makedirs(args.out+'/ncbi_dataset/data/')
         SpeciesDictionary={}
         i=0
         j=0 
@@ -137,14 +140,31 @@ if args.tax in namestax:
             print(species+"\t"+str(SpeciesDictionary[species]['GenomeSize'])+'\t'+SpeciesDictionary[species]['Identifier']+"\t"+str(SpeciesDictionary[species]['N50']))
             assemblytxt=assemblytxt+","+SpeciesDictionary[species]['Identifier']
             genomesizes.append(SpeciesDictionary[species]['GenomeSize'])
-
+            accname=SpeciesDictionary[species]['Identifier']
+            if not os.path.exists(args.dir2+"/"+accname):
+                os.makedirs(args.dir2+"/"+str(accname))
+                cmd="/nfs/users/nfs_e/ev3/tools/datasets download assembly "+str(accname)+" --filename "+str(args.dir2)+"/"+str(accname)+"/RefSeq.relatives.zip > "+str(args.dir2)+"/"+str(accname)+"/"+str(args.tax.replace(' ','_'))+".download.log"
+                os.system(cmd)
+                cmd="unzip -d "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq "+str(args.dir2)+"/"+str(accname)+"/RefSeq.relatives.zip"
+                os.system(cmd)
+                cmd="cat "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/ncbi_dataset/data/"+str(accname)+"/*fna > "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/acc.fasta"
+                os.system(cmd)
+                cmd="dustmasker -in "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/acc.fasta -outfmt fasta | sed -e '/^>/!s/[a-z]/x/g' > "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/masked.fna"
+                os.system(cmd)
+                cmd="rm -r "+str(args.dir2)+"/"+str(accname)+"/RefSeq.relatives.zip "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/acc.fasta "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/ncbi_dataset/data/"+str(accname)
+                os.system(cmd)
+            os.makedirs(args.out+'/ncbi_dataset/data/'+accname)
+            cmd="cp "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/masked.fna "+args.out+'/ncbi_dataset/data/'+accname+'/masked.fna'
+            os.system(cmd)
+            cmd="cp "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq/ncbi_dataset/data/assembly_data_report.jsonl "+args.out+'/ncbi_dataset/data/'+accname+'/assembly_data_report.jsonl'
+            os.system(cmd)
+            cmd="cat "+args.out+'/ncbi_dataset/data/*/assembly_data_report.jsonl > '+args.out+'/ncbi_dataset/data/assembly_data_report.jsonl'
+            os.system(cmd)
         assemblytxt=assemblytxt[1:]
         nrgfs=int(round(float(Average(genomesizes)/1000000)*20))
         print('Genomes for '+str(j)+' species')
         #print(assemblytxt)
         print("Number of necessary GFs "+str(nrgfs))
-        cmd="/nfs/users/nfs_e/ev3/tools/datasets download assembly "+assemblytxt+" --filename "+str(args.dir)+"/RefSeq.relatives.zip > "+str(args.dir)+"/"+str(args.tax.replace(' ','_'))+".download.log"
-        os.system(cmd)
 
 else:
     print('No taxonomic name was not found')

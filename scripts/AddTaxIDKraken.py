@@ -32,7 +32,7 @@ for json_str in json_list:
     print(acc+'\t'+str(taxid))        
 
 g=open(results.output,'w')
-files = glob.glob(results.directory + '/*/*/*/*.fna', recursive=True)
+files = glob.glob(results.directory + '/*/*/*/*.fna')
 for fastafile in files:
     print(fastafile)
     #if os.path.isfile(os.path.join(os.path.dirname(fastafile),"data_report.yaml")):

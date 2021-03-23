@@ -444,12 +444,14 @@ rule DownloadGenusRel:
 		novel_pwd = directory("{workingdirectory}/relatives/"),
 		refseqlog = "{workingdirectory}/relatives/relatives.refseq.log",
 		refseqdir = directory("{workingdirectory}/relatives/relatives.Refseq"),
-		refseqdir_orig = "{workingdirectory}/relatives/RefSeq.relatives.zip",
 		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
+	conda: "envs/kraken.yaml"
 	shell:
 		"""
-		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} -na {input.taxnames} -no {input.taxnodes} > {output.refseqlog}
-		unzip -d {output.refseqdir} {output.refseqdir_orig}
+		if [ ! -d {datadir}/relatives ]; then
+  			mkdir {datadir}/relatives
+		fi
+		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} --dir2 {datadir}/relatives -na {input.taxnames} -no {input.taxnodes} -o {output.refseqdir} > {output.refseqlog}
 		python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
 		"""
 
@@ -500,48 +502,6 @@ rule concatenate_masking:
 		fi
 		"""
 
-checkpoint SplitFastaRel:
-	"""
-	Split downloaded assemblies fasta file depending on the number of cores
-	"""
-	input:
-		krakenffnall = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
-	output:
-		splitdir = directory("{workingdirectory}/split_fasta_rel/")
-	shell:
-		"""
-		python {scriptdir}/FastaSplit.py -f {input.krakenffnall} -s 5000 -o {output.splitdir}
-		"""
-
-rule doMaskingRel:
-	"""
-	Rule to mask repetitive regions in fasta file
-	"""
-	input:
-		fastafile = "{workingdirectory}/split_fasta_rel/kraken.tax.{num}.fa"
-	output:
-		maskedfile = "{workingdirectory}/split_fasta_rel/kraken.tax.{num}.masked.fa"
-	conda: "envs/kraken.yaml"
-	threads: 1
-	shell:
-		"""
-		dustmasker -in {input.fastafile} -outfmt fasta | sed -e '/^>/!s/[a-z]/x/g' > {output.maskedfile}
-		"""
-
-def aggregate_masking_relatives(wildcards):
-	checkpoint_output=checkpoints.SplitFastaRel.get(**wildcards).output[0]
-	return expand ("{workingdirectory}/split_fasta_rel/kraken.tax.{num}.masked.fa", workingdirectory=config["workingdirectory"], num=glob_wildcards(os.path.join(checkpoint_output, 'kraken.tax.{num}.fa')).num)
-
-rule concatenate_masking_relatives:
-	input:
-		aggregate_masking_relatives
-	output:
-		"{workingdirectory}/kraken.relatives.masked.ffn"
-	shell:
-		"""
-		cat {input} > {output}
-		"""
-
 rule CreateKrakenDB:
 	"""
 	Create Kraken DB for all downloaded refseq genomes
@@ -549,11 +509,9 @@ rule CreateKrakenDB:
 	input:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
 		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
-		krakenffnrel = "{workingdirectory}/kraken.relatives.masked.ffn",
-		splitdirrel = directory("{workingdirectory}/split_fasta_rel/"),
+		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn",
 		splitdir = directory("{workingdirectory}/split_fasta/"),
 		krakenfasta = "{workingdirectory}/kraken.tax.ffn",
-		krakenrelfasta = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
 	threads: 10
@@ -571,10 +529,8 @@ rule CreateKrakenDB:
 		else
 			mkdir {output.krakendb}
 		fi
-		rm -r {input.splitdirrel}
 		rm -r {input.splitdir}
 		rm {input.krakenfasta}
-		rm {input.krakenrelfasta}
 		"""
 
 rule RunKraken:
