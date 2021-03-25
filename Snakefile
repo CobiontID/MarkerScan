@@ -583,6 +583,7 @@ rule ExtractReadsKraken:
 
 rule Map2Assembly:
 	input:
+		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
 		krakenfa = "{workingdirectory}/{genus}/kraken.fa"
 	output:
 		paffile = "{workingdirectory}/{genus}/{genus}.paf",
@@ -594,10 +595,15 @@ rule Map2Assembly:
 	conda: "envs/minimap.yaml"
 	shell:
 		"""
-		minimap2 -x map-pb -t {threads} {genome} {input.krakenfa}  > {output.paffile}
-		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
-		grep -v 'NOT COMPLETE' {output.mapping} | cut -f1 | sort | uniq > {output.contiglist} || true
-		seqtk subseq {genome} {output.contiglist} > {output.fasta}
+		if [ -s {input.krakenffnall} ]
+		then
+			minimap2 -x map-pb -t {threads} {genome} {input.krakenfa}  > {output.paffile}
+			python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
+			grep -v 'NOT COMPLETE' {output.mapping} | cut -f1 | sort | uniq > {output.contiglist} || true
+			seqtk subseq {genome} {output.contiglist} > {output.fasta}
+		else
+			touch {output.paffile} {output.mapping} {output.contiglist} {output.reads} {output.fasta}
+		fi
 		"""
 
 rule RunBusco:
@@ -997,7 +1003,12 @@ rule concatenate_readlist:
 		if [ -n "{input}" ]
 		then
 			cat {input} > {output.cont}
-			zcat {reads} | paste - - - - | grep -v -F -f {output.cont} | tr "\t" "\n" | gzip > {output.target}
+			if [[ {reads} == *gz ]] 
+			then
+				zcat {reads} | paste - - - - | grep -v -F -f {output.cont} | tr "\t" "\n" | gzip > {output.target}
+			else
+				cat {reads} | grep -v -F -f {output.cont} | gzip > {output.target}
+			fi
 		else
 			touch {output.cont}
 			cp {reads} {output.target}
