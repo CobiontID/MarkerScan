@@ -6,7 +6,9 @@ Please clone this directory
 1. snakefile
 2. all scripts for the directory /scripts
 3. all yaml files containing information regarding external programs required to be downloaded by conda in /envs
-4. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm  
+4. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm
+5. the NCBI datasets tool
+6. the microsporidia ssu db  
 
 to your location of choice.
 
@@ -22,7 +24,9 @@ sci_name: Blastobasis lacticolella
 workingdirectory: $WORKINGDIR
 scriptdir: $SCRIPTDIR
 datadir: $DATADIR
-SSUHMMfile: $SSU/SSU_Prok_Euk_Microsporidia.hmm
+SSUHMMfile: $dir/SSU_Prok_Euk_Microsporidia.hmm
+datasets: $dir/datasets
+microsporidiadb: $dir/MicrosporidiaSSU_NCBI
 ```
 
 ## Script to launch the pipeline
