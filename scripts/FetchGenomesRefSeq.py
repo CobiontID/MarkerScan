@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--taxname', action="store", dest="tax", type=str, help='a genus taxname to download refseq genomes for')
 parser.add_argument('--dir', action="store", dest="dir", type=str, help='base directory')
 parser.add_argument('--refseq', action="store", dest="refs", type=str, help='all or refseq database')
+parser.add_argument('-d', action="store", dest="datasets", type=str, help='datasets')
 args = parser.parse_args()
 
 def Average(lst): 
@@ -23,9 +24,9 @@ if not os.path.exists(args.dir):
 
 # fetch data from NCBI via 'datasets' of all species from that clade
 if args.refs == 'yes':
-    cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-name '"+str(taxname)+"' > "+str(args.dir)+"/log."+str(taxname_orig)+".json"
+    cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxname)+"' > "+str(args.dir)+"/log."+str(taxname_orig)+".json"
 else:
-    cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(taxname)+"' > "+str(args.dir)+"/log."+str(taxname_orig)+".json"
+    cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxname)+"' > "+str(args.dir)+"/log."+str(taxname_orig)+".json"
 print(cmd)
 os.system(cmd)
 
@@ -79,7 +80,7 @@ if distros_dict:
     print('Genomes for '+str(j)+' species')
     #print(assemblytxt)
     print("Number of necessary GFs "+str(nrgfs))
-    cmd="/nfs/users/nfs_e/ev3/tools/datasets download assembly "+assemblytxt+" --filename "+str(args.dir)+"/RefSeq."+str(taxname_orig)+".zip > "+str(args.dir)+"/"+str(taxname_orig)+".download.log"
+    cmd=str(args.datasets)+" download assembly "+assemblytxt+" --filename "+str(args.dir)+"/RefSeq."+str(taxname_orig)+".zip > "+str(args.dir)+"/"+str(taxname_orig)+".download.log"
     os.system(cmd)
 
 else:

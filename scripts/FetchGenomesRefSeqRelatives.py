@@ -11,6 +11,7 @@ parser.add_argument('--dir2', action="store", dest="dir2", type=str, help='base 
 parser.add_argument("-na", type=str, action='store', dest='namesfile', metavar='NAMES',help='NCBI names.dmp')
 parser.add_argument("-no", type=str, action='store', dest='nodesfile', metavar='NODES',help='NCBI nodes.dmp')
 parser.add_argument('-o', action="store", dest="out", type=str, help='out directory')
+parser.add_argument('-d', action="store", dest="datasets", type=str, help='datasets')
 parser.add_argument('--refseq', action="store", dest="refs", type=str, help='all or refseq database')
 args = parser.parse_args()
 
@@ -75,9 +76,9 @@ if args.tax in namestax:
         print(str(parent)+'\t'+parentname+'\t'+parentname_combi)
         # fetch data from NCBI via 'datasets' of all species from that clade
         if args.refs == 'yes':
-            cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-id '"+str(parent)+"' > "+str(args.dir)+"/log."+str(parentname_combi)+".json"
+            cmd=str(args.datasets)+" assembly-descriptors --refseq tax-id '"+str(parent)+"' > "+str(args.dir)+"/log."+str(parentname_combi)+".json"
         else:
-            cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-id '"+str(parent)+"' > "+str(args.dir)+"/log."+str(parentname_combi)+".json"
+            cmd=str(args.datasets)+" assembly-descriptors tax-id '"+str(parent)+"' > "+str(args.dir)+"/log."+str(parentname_combi)+".json"
         print(cmd)
         os.system(cmd)
         # parse resulting JSON file
@@ -143,7 +144,7 @@ if args.tax in namestax:
             accname=SpeciesDictionary[species]['Identifier']
             if not os.path.exists(args.dir2+"/"+accname):
                 os.makedirs(args.dir2+"/"+str(accname))
-                cmd="/nfs/users/nfs_e/ev3/tools/datasets download assembly "+str(accname)+" --filename "+str(args.dir2)+"/"+str(accname)+"/RefSeq.relatives.zip > "+str(args.dir2)+"/"+str(accname)+"/"+str(args.tax.replace(' ','_'))+".download.log"
+                cmd=str(args.datasets)+" download assembly "+str(accname)+" --filename "+str(args.dir2)+"/"+str(accname)+"/RefSeq.relatives.zip > "+str(args.dir2)+"/"+str(accname)+"/"+str(args.tax.replace(' ','_'))+".download.log"
                 os.system(cmd)
                 cmd="unzip -d "+str(args.dir2)+"/"+str(accname)+"/relatives.Refseq "+str(args.dir2)+"/"+str(accname)+"/RefSeq.relatives.zip"
                 os.system(cmd)

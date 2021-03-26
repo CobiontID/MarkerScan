@@ -14,6 +14,8 @@ datadir = config["datadir"]
 sciname_goi = config["sci_name"]
 SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
+datasets = config["datasets"]
+microsporidiadb = config["microsporidiadb"]
 
 rule all:
 	input:
@@ -285,7 +287,7 @@ rule ClassifySSU:
 		cut -f1,8 -d',' {output.SILVA_output} | tr ',' '\t' > {output.SILVA_tax}
 		cut -f2 {output.SILVA_tax} | grep -v 'lca_tax_embl_ebi_ena' | grep -v 'lca_tax_slv' | sort | uniq > {output.SILVA16Sgenus} && [[ -s {output.SILVA16Sgenus} ]]
 		if [ -s {input.fasta16SLociReducedmicro} ]; then
-			blastn -db {datadir}/silva/MicrosporidiaSSU_NCBI -query {input.fasta16SLociReducedmicro} -out {output.blastout} -outfmt 6
+			blastn -db {microsporidiadb} -query {input.fasta16SLociReducedmicro} -out {output.blastout} -outfmt 6
 			python {scriptdir}/ParseBlastLineage.py -b {output.blastout} -na {input.taxnames} -no {input.taxnodes} > {output.blastgenus}
 			cat {output.blastgenus} >> {output.SILVA16Sgenus}
 		else
@@ -374,9 +376,9 @@ rule DownloadRefSeqGenus:
 				fi
 				mkdir {datadir}/genera/{params.taxname}
 				if grep -q Eukaryota {input.generafiles}; then
-					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				else
-					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				fi
 				if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
 					unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
@@ -388,9 +390,9 @@ rule DownloadRefSeqGenus:
 				mkdir {datadir}/genera/{params.taxname}
 			fi
 			if grep -q Eukaryota {input.generafiles}; then
-				python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+				python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 			else
-				python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+				python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 			fi
 			if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
 				unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
@@ -451,7 +453,7 @@ rule DownloadGenusRel:
 		if [ ! -d {datadir}/relatives ]; then
   			mkdir {datadir}/relatives
 		fi
-		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} --dir2 {datadir}/relatives -na {input.taxnames} -no {input.taxnodes} -o {output.refseqdir} > {output.refseqlog}
+		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} --dir2 {datadir}/relatives -na {input.taxnames} -no {input.taxnodes} -o {output.refseqdir} -d {datasets} > {output.refseqlog}
 		python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
 		"""
 
