@@ -939,7 +939,8 @@ rule DrawCircos:
 	conda: "envs/circos.yaml"
 	shell:
 		"""
-		if [ -s {input.contiglist} ]; then
+		linecount=$(wc -l < {input.contiglist})
+		if [ $linecount -le 200 ]; then
 			python {scriptdir}/input_circos.py -f {input.assemblyfasta} -c {input.contiglist} -b {input.completed} -k {output.karyo} -d {output.cdsfile} -l {output.linkfile}
 			python {scriptdir}/config_circos.py -k {output.karyo} -d {output.cdsfile} -l {output.linkfile} > {output.conffile}
 			circos -conf {output.conffile} -outputdir {params.dirname}

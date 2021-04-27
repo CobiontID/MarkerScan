@@ -162,6 +162,8 @@ for line in k:
     sciname=line.split(';')[-2]
     if 'environmental' in sciname:
         sciname=line.split(';')[-3]
+    if sciname == 'uncultured':
+        sciname=line.split(';')[-3]
     if 'Hafnia-Obesumbacterium' in sciname:
         sciname=sciname.split('-')[0]
     print(sciname)
