@@ -1,4 +1,4 @@
-# Marker_pipeline
+# Marker-pipeline
 This repository contains a Snakemake pipeline which determines the species composition of the sample by SSU presence and seperates them accordingly. 
 
 ## Required input
