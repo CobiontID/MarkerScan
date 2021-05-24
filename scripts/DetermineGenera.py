@@ -166,6 +166,8 @@ for line in k:
         sciname=line.split(';')[-3]
     if 'Hafnia-Obesumbacterium' in sciname:
         sciname=sciname.split('-')[0]
+    if 'Escherichia-Shigella' in sciname:
+        sciname=sciname.split('-')[0]
     print(sciname)
     if sciname in namestax:
         #print(sciname)
@@ -189,7 +191,7 @@ for line in k:
                     i=0
                     for distro in distros_dict["datasets"]:
                         i=i+1
-                    if i > 1:
+                    if i > 0:
                         foundlevel = True
             f.close()
             if  foundlevel == True:
@@ -228,7 +230,7 @@ for line in k:
                         i=0
                         for distro in distros_dict["datasets"]:
                             i=i+1
-                        if i > 1:
+                        if i > 0:
                             foundlevel = True
                 f.close()
                 if  foundlevel == True:

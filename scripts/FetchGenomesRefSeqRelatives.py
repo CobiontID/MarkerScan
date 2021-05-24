@@ -87,8 +87,18 @@ if args.tax in namestax:
         if distros_dict:
             i=0
             for distro in distros_dict["datasets"]:
-                i=i+1
-            if i > 2:
+                sciname_orig=distro['org']['sci_name']
+                if 'strain' in distro['org']:
+                    strainname=distro['org']['strain']
+                    if strainname in sciname_orig and 'sp' not in sciname_orig:
+                        sciname=sciname_orig.replace(strainname,'').strip()
+                    else:
+                        sciname=sciname_orig
+                else:
+                    sciname=sciname_orig
+                if sciname != args.tax:
+                    i=i+1
+            if i > 0:
                 foundlevel = True
         f.close()
         if foundlevel == True:
@@ -162,10 +172,10 @@ if args.tax in namestax:
             cmd="cat "+args.out+'/ncbi_dataset/data/*/assembly_data_report.jsonl > '+args.out+'/ncbi_dataset/data/assembly_data_report.jsonl'
             os.system(cmd)
         assemblytxt=assemblytxt[1:]
-        nrgfs=int(round(float(Average(genomesizes)/1000000)*20))
+        #nrgfs=int(round(float(Average(genomesizes)/1000000)*20))
         print('Genomes for '+str(j)+' species')
         #print(assemblytxt)
-        print("Number of necessary GFs "+str(nrgfs))
+        #print("Number of necessary GFs "+str(nrgfs))
 
 else:
     print('No taxonomic name was not found')
