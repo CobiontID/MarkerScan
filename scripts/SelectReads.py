@@ -27,11 +27,11 @@ for line in m:
     if ctg in finalcontigs:
         readnames=line.split('\t')[1].split(',')
         for read in readnames:
-            if read not in readlist:
-                readlist.append(read)
+           #if read not in readlist:
+           readlist.append(read)
 m.close()
 
 n=open(args.out,'w')
-for rd in readlist:
+for rd in set(readlist):
     n.write(rd+'\n')
 n.close()
