@@ -213,7 +213,7 @@ rule DownloadNCBITaxonomy:
 	Download current version of NCBI taxonomy
 	"""
 	input:
-		taxdir = directory(expand("{datadir}/taxonomy/",datadir=config["datadir"])),
+		taxdir = expand("{datadir}/taxonomy/",datadir=config["datadir"]),
 	output:
 		#taxnames = "{datadir}/taxonomy/names.dmp",
 		#taxnodes = "{datadir}/taxonomy/nodes.dmp",
@@ -266,8 +266,7 @@ rule ClassifySSU:
 	input:
 		fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
 		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa",
-		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
-		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
+		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 		donesilva = "{workingdirectory}/silva_download.done.txt"
 	output:
 		SILVA_output_embl = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.embl.csv",
@@ -277,6 +276,9 @@ rule ClassifySSU:
 		blastout = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt",
 		blastgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.genus.txt",
 		SILVA16Sgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.genus.txt"
+	params:
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	conda: "envs/sina.yaml"
 	threads: 10
 	shell:
@@ -288,7 +290,7 @@ rule ClassifySSU:
 		cut -f2 {output.SILVA_tax} | grep -v 'lca_tax_embl_ebi_ena' | grep -v 'lca_tax_slv' | sort | uniq > {output.SILVA16Sgenus} && [[ -s {output.SILVA16Sgenus} ]]
 		if [ -s {input.fasta16SLociReducedmicro} ]; then
 			blastn -db {microsporidiadb} -query {input.fasta16SLociReducedmicro} -out {output.blastout} -outfmt 6
-			python {scriptdir}/ParseBlastLineage.py -b {output.blastout} -na {input.taxnames} -no {input.taxnodes} > {output.blastgenus}
+			python {scriptdir}/ParseBlastLineage.py -b {output.blastout} -na {params.taxnames} -no {params.taxnodes} > {output.blastgenus}
 			cat {output.blastgenus} >> {output.SILVA16Sgenus}
 		else
 			touch {output.blastout}
@@ -318,14 +320,16 @@ checkpoint GetGenera:
 		SILVA16Sgenus = expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),
 		#screenfile = "{workingdirectory}/refseq202.screen",
 		#asminfo = expand("{datadir}/mash/assembly_summary_refseq.txt",datadir=config["datadir"]),
-		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
-		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
+		donetaxon = "{workingdirectory}/taxdownload.done.txt"
 	output:
 		generadir = directory("{workingdirectory}/genera")
+	params:
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	shell:
 		"""
 		mkdir {output.generadir}
-		python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {input.taxnames} -no {input.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}'
+		python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {params.taxnames} -no {params.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}' -d {datasets}
 		while read p
 		do
 			shortname=`echo $p | cut -d, -f1`	
@@ -440,20 +444,22 @@ rule DownloadGenusRel:
 	Download assemblies of closely related species to species of interest
 	"""
 	input:
-		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
-		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
+		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 	output:
 		novel_pwd = directory("{workingdirectory}/relatives/"),
 		refseqlog = "{workingdirectory}/relatives/relatives.refseq.log",
 		refseqdir = directory("{workingdirectory}/relatives/relatives.Refseq"),
 		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
+	params:
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
 		if [ ! -d {datadir}/relatives ]; then
   			mkdir {datadir}/relatives
 		fi
-		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} --dir2 {datadir}/relatives -na {input.taxnames} -no {input.taxnodes} -o {output.refseqdir} -d {datasets} > {output.refseqlog}
+		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} --dir2 {datadir}/relatives -na {params.taxnames} -no {params.taxnodes} -o {output.refseqdir} -d {datasets} > {output.refseqlog}
 		python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
 		"""
 
@@ -512,7 +518,7 @@ rule CreateKrakenDB:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
 		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
 		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn",
-		splitdir = directory("{workingdirectory}/split_fasta/"),
+		splitdir = "{workingdirectory}/split_fasta/",
 		krakenfasta = "{workingdirectory}/kraken.tax.ffn",
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
@@ -614,10 +620,11 @@ rule RunBusco:
 	"""
 	input:
 		circgenome = "{workingdirectory}/{genus}/{genus}.ctgs.fa",
-		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
-		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
+		donetaxon = "{workingdirectory}/taxdownload.done.txt"
 	params:
-		buscodir = directory("{workingdirectory}/{genus}/busco")
+		buscodir = directory("{workingdirectory}/{genus}/busco"),
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	output:
 		buscodbs = "{workingdirectory}/{genus}/info_dbs.txt",
 		buscoini = "{workingdirectory}/{genus}/config_busco.ini",
@@ -630,7 +637,7 @@ rule RunBusco:
 		"""
 		if [ -s {input.circgenome} ]; then
 			busco --list-datasets > {output.buscodbs}
-			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f || true
 		else
 			touch {output.buscodbs}
@@ -784,10 +791,11 @@ rule RunBuscoAssembly:
 	"""
 	input:
 		circgenome = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
-		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
-		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
+		donetaxon = "{workingdirectory}/taxdownload.done.txt"
 	params:
-		buscodir = directory("{workingdirectory}/{genus}/buscoAssembly")
+		buscodir = directory("{workingdirectory}/{genus}/buscoAssembly"),
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	output:
 		buscodbs = "{workingdirectory}/{genus}/info_dbs_assembly.txt",
 		buscoini = "{workingdirectory}/{genus}/config_busco_assembly.ini",
@@ -799,7 +807,7 @@ rule RunBuscoAssembly:
 		"""
 		if [ -s {input.circgenome} ]; then
 			busco --list-datasets > {output.buscodbs}
-			python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f || true
 		else
 			touch {output.buscodbs}
@@ -885,12 +893,13 @@ rule RunBuscoReads:
 	"""
 	input:
 		circgenome = "{workingdirectory}/{genus}/{genus}.finalreads.fa",
-		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
-		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"]),
+		donetaxon = "{workingdirectory}/taxdownload.done.txt"
 	params:
 		buscodir = directory("{workingdirectory}/{genus}/buscoReads"),
 		genus = "{genus}",
-		workingdirectory = "{workingdirectory}"
+		workingdirectory = "{workingdirectory}",
+		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
+		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	output:
 		renamedfa = "{workingdirectory}/{genus}/kraken.renamed.fa",
 		convtable = "{workingdirectory}/{genus}/kraken.convtable.txt",

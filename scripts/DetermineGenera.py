@@ -13,6 +13,7 @@ parser.add_argument("-no", type=str, action='store', dest='nodesfile', metavar='
 parser.add_argument("-suf", type=str, action='store', dest='suffix', metavar='SUFFIX',help='suffix outputfile')
 parser.add_argument("-od", type=str, action='store', dest='outdir', metavar='OUTDIR',help='output directory')
 parser.add_argument("-g", type=str, action='store', dest='spoi', metavar='SPOI',help='species of interest')
+parser.add_argument('-d', type=str, action="store", dest="datasets", help='datasets')
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 args = parser.parse_args()
 
@@ -180,9 +181,9 @@ for line in k:
             print('FAMILY:'+sciname+' CLADE:'+cladelevelname)
             taxlevelname=sciname
             if 'Eukaryota' == rootlevelname:
-                cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
             else:
-                cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
             os.system(cmd)
             foundlevel = False
             with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
@@ -219,9 +220,9 @@ for line in k:
             taxlevelname=taxnames_sci[lineage[namestax[sciname]][-1]]
             if int(lineage[namestax[sciname]][-1]) != 1:
                 if 'Eukaryota' == rootlevelname:
-                    cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                    cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
                 else:
-                    cmd="/nfs/users/nfs_e/ev3/tools/datasets assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                    cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
                 os.system(cmd)
                 foundlevel = False
                 with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
