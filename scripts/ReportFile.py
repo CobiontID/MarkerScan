@@ -85,8 +85,9 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     krakenrep=wd+'/kraken.report'
     m=open(krakenrep,'r')
     for line in m:
-        line=line.strip()
-        if genusname in line:
+        #line=line.strip()
+        searchpattern=' '+genusname+'\n'
+        if searchpattern in line:
             percentage=float(line.split('\t')[0])
     m.close()
     pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads ("+str(percentage)+"%) classified by Kraken as "+genusname+"." , ln=1, align="L")
