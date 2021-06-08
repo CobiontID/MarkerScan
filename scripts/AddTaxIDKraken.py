@@ -26,6 +26,7 @@ for json_str in json_list:
         acc2=distro['assemblyInfo']['genbankAssmAccession']
     else:
         acc=distro['assemblyInfo']['genbankAssmAccession']
+        acc2=distro['assemblyInfo']['genbankAssmAccession']
     taxid=distro['taxId']
     SpeciesDictionary[acc]=taxid
     SpeciesDictionary[acc2]=taxid

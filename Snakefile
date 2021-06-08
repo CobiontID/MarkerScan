@@ -917,7 +917,7 @@ rule RunBuscoReads:
 			if [ $linecount -le 100000 ]; then
 				python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
 				busco --list-datasets > {output.buscodbs}
-				python {scriptdir}/BuscoConfig.py -na {input.taxnames} -no {input.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+				python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 				busco --config {output.buscoini} -f || true
 				touch {output.completed}
 				python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
