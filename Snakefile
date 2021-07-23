@@ -40,7 +40,8 @@ rule HMMscan_SSU:
 	conda: "envs/hmmer.yaml"
 	shell:
 		"""
-		nhmmer --cpu {threads} --noali --tblout {output.dom} -o {output.log} {SSUHMMfile} {genome}
+		hmmpress {SSUHMMfile}
+		nhmmscan --cpu {threads} --noali --tblout {output.dom} -o {output.log} {SSUHMMfile} {genome}
 		"""
 
 rule FetchHMMReads:
@@ -56,8 +57,8 @@ rule FetchHMMReads:
 		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
 	shell:
 		"""
-		python {scriptdir}/GetReadsSSU_nhmmer.py -i {input.dom} | grep -v 'RF02542.afa' > {output.readsinfo} || true
-		python {scriptdir}/GetReadsSSU_nhmmer.py -i {input.dom} | grep 'RF02542.afa' > {output.readsinfomicro} || true
+		python {scriptdir}/GetReadsSSU_nhmmscan.py -i {input.dom} | grep -v 'RF02542.afa' > {output.readsinfo} || true
+		python {scriptdir}/GetReadsSSU_nhmmscan.py -i {input.dom} | grep 'RF02542.afa' > {output.readsinfomicro} || true
 		cut -f1 {output.readsinfo} > {output.readslist}
 		cut -f1 {output.readsinfomicro} > {output.readslistmicro}
 		"""
