@@ -14,7 +14,6 @@ datadir = config["datadir"]
 sciname_goi = config["sci_name"]
 SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
-datasets = config["datasets"]
 microsporidiadb = config["microsporidiadb"]
 
 rule all:
@@ -382,9 +381,9 @@ rule DownloadRefSeqGenus:
 				fi
 				mkdir {datadir}/genera/{params.taxname}
 				if grep -q Eukaryota {input.generafiles}; then
-					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+					python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				else
-					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				fi
 				if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
 					unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
@@ -396,9 +395,9 @@ rule DownloadRefSeqGenus:
 				mkdir {datadir}/genera/{params.taxname}
 			fi
 			if grep -q Eukaryota {input.generafiles}; then
-				python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+				python {scriptdir}/FetchGenomesRefSeq.py --refseq no --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 			else
-				python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} -d {datasets} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
+				python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 			fi
 			if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
 				unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
