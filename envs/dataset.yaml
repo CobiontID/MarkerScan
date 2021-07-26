@@ -1,0 +1,7 @@
+name: dataset
+channels:
+  - bioconda
+dependencies:
+  - kraken2
+  - pip:
+    - ncbi-datasets-pylib

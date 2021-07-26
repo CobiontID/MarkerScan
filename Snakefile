@@ -40,7 +40,6 @@ rule HMMscan_SSU:
 	conda: "envs/hmmer.yaml"
 	shell:
 		"""
-		hmmpress {SSUHMMfile}
 		nhmmscan --cpu {threads} --noali --tblout {output.dom} -o {output.log} {SSUHMMfile} {genome}
 		"""
 
@@ -327,10 +326,11 @@ checkpoint GetGenera:
 	params:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
+	conda: "envs/dataset.yaml"
 	shell:
 		"""
 		mkdir {output.generadir}
-		python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {params.taxnames} -no {params.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}' -d {datasets}
+		python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {params.taxnames} -no {params.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}'
 		while read p
 		do
 			shortname=`echo $p | cut -d, -f1`	
@@ -355,6 +355,7 @@ rule DownloadRefSeqGenus:
 		done_api = "{workingdirectory}/apicomplexa_download.done.txt"
 	params:
 		taxname = "{genus}"
+	conda: "envs/dataset.yaml"
 	output:
 		#novel_pwd = directory("{datadir}/genera/{genus}"),
 		#refseqlog = "{datadir}/genera/{genus}/{genus}.refseq.log",
@@ -454,13 +455,13 @@ rule DownloadGenusRel:
 	params:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
-	conda: "envs/kraken.yaml"
+	conda: "envs/dataset.yaml"
 	shell:
 		"""
 		if [ ! -d {datadir}/relatives ]; then
   			mkdir {datadir}/relatives
 		fi
-		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} --dir2 {datadir}/relatives -na {params.taxnames} -no {params.taxnodes} -o {output.refseqdir} -d {datasets} > {output.refseqlog}
+		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} -na {params.taxnames} -no {params.taxnodes} > {output.refseqlog}
 		python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
 		"""
 

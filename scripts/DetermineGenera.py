@@ -5,6 +5,12 @@ import json
 import os
 import sys
 
+try:
+    import ncbi.datasets
+except ImportError:
+    print('ncbi.datasets module not found. To install, run `pip install ncbi-datasets-pylib`.')
+from ncbi.datasets.package import dataset
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", type=str, action='store', dest='tax', metavar='TAX',help='define tax genus file')
 parser.add_argument("-t", type=str, action='store', dest='type', metavar='TYPE',help='define ranking type')
@@ -13,7 +19,6 @@ parser.add_argument("-no", type=str, action='store', dest='nodesfile', metavar='
 parser.add_argument("-suf", type=str, action='store', dest='suffix', metavar='SUFFIX',help='suffix outputfile')
 parser.add_argument("-od", type=str, action='store', dest='outdir', metavar='OUTDIR',help='output directory')
 parser.add_argument("-g", type=str, action='store', dest='spoi', metavar='SPOI',help='species of interest')
-parser.add_argument('-d', type=str, action="store", dest="datasets", help='datasets')
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 args = parser.parse_args()
 
@@ -138,6 +143,8 @@ def getTaxParent(tax_nodes, tax_types, taxid, ranking):
 
     return tax_parents
 
+api_instance = ncbi.datasets.GenomeApi(ncbi.datasets.ApiClient())
+
 # determine the lineage where your tax id belongs to (lineage taken until upper level = args.type)
 taxparents,taxtypes=readNodes(args.nodesfile)
 taxnames,namestax,taxnames_sci=readNames(args.namesfile)
@@ -181,20 +188,25 @@ for line in k:
             print('FAMILY:'+sciname+' CLADE:'+cladelevelname)
             taxlevelname=sciname
             if 'Eukaryota' == rootlevelname:
-                cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                #cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
             else:
-                cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
-            os.system(cmd)
+                genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),filters_assembly_source='refseq')
+                #cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+            #os.system(cmd)
             foundlevel = False
-            with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
-                distros_dict = json.load(f)
-                if distros_dict:
-                    i=0
-                    for distro in distros_dict["datasets"]:
-                        i=i+1
-                    if i > 0:
-                        foundlevel = True
-            f.close()
+            i=0
+            for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                i=i+1
+            #with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
+            #    distros_dict = json.load(f)
+            #    if distros_dict:
+            #        i=0
+            #        for distro in distros_dict["datasets"]:
+            #            i=i+1
+            if i > 0:
+                foundlevel = True
+            #f.close()
             if  foundlevel == True:
                 if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
                     fulllineage_euk=taxlevelname
@@ -220,20 +232,25 @@ for line in k:
             taxlevelname=taxnames_sci[lineage[namestax[sciname]][-1]]
             if int(lineage[namestax[sciname]][-1]) != 1:
                 if 'Eukaryota' == rootlevelname:
-                    cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                    #cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
                 else:
-                    cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
-                os.system(cmd)
+                    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),filters_assembly_source='refseq')
+                    #cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
+                #os.system(cmd)
                 foundlevel = False
-                with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
-                    distros_dict = json.load(f)
-                    if distros_dict:
-                        i=0
-                        for distro in distros_dict["datasets"]:
-                            i=i+1
-                        if i > 0:
-                            foundlevel = True
-                f.close()
+                i=0
+                for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                    i=i+1
+                #with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
+                #    distros_dict = json.load(f)
+                #    if distros_dict:
+                #        i=0
+                #        for distro in distros_dict["datasets"]:
+                #            i=i+1
+                if i > 0:
+                    foundlevel = True
+                #f.close()
                 if  foundlevel == True:
                 #if taxtypes[namestax[sciname]] == args.type:
                     if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
