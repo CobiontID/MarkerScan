@@ -20,7 +20,6 @@ args = parser.parse_args()
 def Average(lst): 
     return sum(lst) / len(lst) 
 
-
 def readNames(names_tax_file):
     '''
     input:
@@ -111,7 +110,7 @@ if args.tax in namestax:
         contiguity=int(assembly.contig_n50)
         i=i+1
         acc=assembly.assembly_accession
-        sciname_orig=assembly.org.sci_name,
+        sciname_orig=assembly.org.sci_name
         strainname=assembly.org.strain
         if strainname != None:
             if strainname in sciname_orig and 'sp' not in sciname_orig:
@@ -121,7 +120,12 @@ if args.tax in namestax:
         else:
             sciname=sciname_orig
         if sciname != args.tax:
+            print('SECOND STEP')
+            #print(assembly.org.sci_name)
+            #print(sciname_orig)
+            print(sciname) 
             if sciname not in SpeciesDictionary:
+                #print(sciname)
                 SpeciesDictionary[sciname]={}
                 SpeciesDictionary[sciname]['ReleaseDate']=assembly.submission_date
                 SpeciesDictionary[sciname]['Identifier']=acc
