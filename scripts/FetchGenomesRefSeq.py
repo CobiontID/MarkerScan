@@ -30,9 +30,9 @@ if not os.path.exists(args.dir):
 
 # fetch data from NCBI via 'datasets' of all species from that clade
 if args.refs == 'yes':
-    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(parent),filters_assembly_source='refseq')
+    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxname),filters_assembly_source='refseq')
 else:
-    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(parent))
+    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxname))
 
 SpeciesDictionary={}
 i=0

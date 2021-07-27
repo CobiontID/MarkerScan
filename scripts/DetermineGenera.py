@@ -155,14 +155,15 @@ prokgens=[]
 spoifamily=""
 spoiclade=""
 spoigenus=args.spoi.split()[0]
-if spoigenus in namestax:
-    lineage=getTaxParent(taxparents,taxtypes,namestax[spoigenus],args.type)
-    lineage2=getTaxParent(taxparents,taxtypes,namestax[spoigenus],'order')
-    if lineage[namestax[spoigenus]] != None:
-        spoifamily=taxnames[lineage[namestax[spoigenus]][-1]]
-        spoiclade=taxnames[lineage2[namestax[spoigenus]][-1]]
+spoispecies=args.spoi
+if spoispecies in namestax:
+    lineage=getTaxParent(taxparents,taxtypes,namestax[spoispecies],args.type)
+    lineage2=getTaxParent(taxparents,taxtypes,namestax[spoispecies],'order')
+    if lineage[namestax[spoispecies]] != None:
+        spoifamily=taxnames[lineage[namestax[spoispecies]][-1]]
+        spoiclade=taxnames[lineage2[namestax[spoispecies]][-1]]
 
-print(spoifamily+'\t'+spoiclade)
+print(spoigenus+'\t'+spoifamily+'\t'+spoiclade)
 
 k=open(args.tax,'r')
 for line in k:
