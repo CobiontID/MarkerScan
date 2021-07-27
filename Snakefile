@@ -483,10 +483,13 @@ checkpoint SplitFasta:
 	input:
 		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
 	output:
-		splitdir = directory("{workingdirectory}/split_fasta/")
+		splitdir = directory("{workingdirectory}/split_fasta/"),
+		splitdone = "{workingdirectory}/split_fasta.done.txt"
 	shell:
 		"""
+		mkdir -p {output.splitdir}
 		python {scriptdir}/FastaSplit.py -f {input.krakenffnall} -s 5000 -o {output.splitdir}
+		touch {output.splitdone}
 		"""
 
 rule doMasking:
@@ -531,8 +534,9 @@ rule CreateKrakenDB:
 		donefile = "{workingdirectory}/taxdownload.done.txt",
 		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
 		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn",
+		splitdone = "{workingdirectory}/split_fasta.done.txt",
 		splitdir = "{workingdirectory}/split_fasta/",
-		krakenfasta = "{workingdirectory}/kraken.tax.ffn",
+		krakenfasta = "{workingdirectory}/kraken.tax.ffn"
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
 	threads: 10
@@ -775,7 +779,8 @@ rule Hifiasm:
 		completed = "{workingdirectory}/{genus}/assembly.done.txt",
 		dirname = directory("{workingdirectory}/{genus}/hifiasm"),
 		gfa = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.gfa",
-		fasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta"
+		fasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
+		fai = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta.fai"
 	threads: 10
 	conda: "envs/hifiasm.yaml"
 	shell:
@@ -790,10 +795,12 @@ rule Hifiasm:
 				faidx {output.fasta}
 			else
 				touch {output.fasta}
+				touch {output.fai}
 			fi 
 		else
 			touch {output.gfa} 
-			touch {output.fasta} 
+			touch {output.fasta}
+			touch {output.fai} 
 		fi
 		touch {output.completed}
 		"""
