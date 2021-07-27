@@ -29,7 +29,7 @@ for filename in glob.glob(dirname+'/run_*/full_table.tsv'):
                 if int(line.split('\t')[2].count("_")) == 2:
                     contig='_'.join(line.split('\t')[2].split('_')[:-1])
                 elif int(line.split('\t')[2].count("_")) == 1:
-                    if line.split('\t')[2].startswith('a_'):
+                    if line.split('\t')[2].startswith('a_') or line.split('\t')[2].startswith('scaffold_'):
                         contig=line.split('\t')[2]
                     else:
                         contig=line.split('\t')[2].split('_')[0]
