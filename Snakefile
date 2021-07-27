@@ -298,16 +298,22 @@ rule ClassifySSU:
 		"""
 
 rule MapAllReads2Assembly:
+	input:
+		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
 	output:
 		paffile = "{workingdirectory}/AllReadsGenome.paf",
 		mapping = "{workingdirectory}/AllReadsGenome.ctgs",
-		reads = "{workingdirectory}/AllReadsGenome.reads",
+		reads = "{workingdirectory}/AllReadsGenome.reads"
 	threads: 10
 	conda: "envs/minimap.yaml"
 	shell:
 		"""
-		minimap2 -x map-pb -t {threads} {genome} {reads}  > {output.paffile}
-		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
+		if [ -s {input.krakenffnall} ]; then
+			minimap2 -x map-pb -t {threads} {genome} {reads}  > {output.paffile}
+			python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
+		else
+			touch {output.paffile} {output.paffile} {output.reads}
+		fi
 		"""
 
 checkpoint GetGenera:
@@ -446,6 +452,7 @@ rule DownloadGenusRel:
 	"""
 	input:
 		donetaxon = "{workingdirectory}/taxdownload.done.txt",
+		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
 	output:
 		novel_pwd = directory("{workingdirectory}/relatives/"),
 		refseqlog = "{workingdirectory}/relatives/relatives.refseq.log",
@@ -460,8 +467,13 @@ rule DownloadGenusRel:
 		if [ ! -d {datadir}/relatives ]; then
   			mkdir {datadir}/relatives
 		fi
-		python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} -na {params.taxnames} -no {params.taxnodes} > {output.refseqlog}
-		python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
+		if [ -s {input.krakenffnall} ]; then
+			python {scriptdir}/FetchGenomesRefSeqRelatives.py --taxname '{sciname_goi}' --dir {output.novel_pwd} -na {params.taxnames} -no {params.taxnodes} > {output.refseqlog}
+			python {scriptdir}/AddTaxIDKraken.py -d {output.refseqdir} -o {output.krakenffnrel}
+		else
+			mkdir {output.refseqdir}
+			touch {output.refseqlog} {output.krakenffnrel}
+		fi
 		"""
 
 checkpoint SplitFasta:
