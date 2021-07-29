@@ -204,17 +204,17 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     num_lines_put = sum(1 for line in open(putreadids))
     pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
     pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    #
-    refseqfile=args.datadir+'/'+genusname+'/'+genusname+'.refseq.log'
-    genomesize=[]
-    k=open(refseqfile,'r')
-    for line in k:
-        line=line.strip()
-        if not line.startswith('/') and not line.startswith('Genomes for') and not line.startswith('Number of'):
-            genomesize.append(int(line.split('\t')[1]))
-    k.close()
-    average = Average(genomesize)
-    mblen="{:.2f}".format(float(average/1000000))+"Mb"
-    pdf.cell(200, 6, txt="The mean genomesize for the family "+str(genusname)+" is "+str(mblen), ln=1, align="L") 
+    #refseqfile=args.datadir+'/'+genusname+'/'+genusname+'.refseq.log'
+    #genomesize=[]
+    #k=open(refseqfile,'r')
+    #for line in k:
+    #    line=line.strip()
+    #    if not line.startswith('/') and not line.startswith('Genomes for') and not line.startswith('Number of'):
+    #        genomesize.append(int(line.split('\t')[1]))
+    #k.close()
+    #average = Average(genomesize)
+    #mblen="{:.2f}".format(float(average/1000000))+"Mb"
+    #pdf.cell(200, 6, txt="The mean genomesize for the family "+str(genusname)+" is "+str(mblen), ln=1, align="L") 
     imagename = wd + '/' + genusname + '/circos.png'
     if os.path.getsize(imagename) > 0:
         pdf.image(imagename,w=120,h=120)
