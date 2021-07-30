@@ -1,8 +1,10 @@
 name: dataset
 channels:
+  - conda-forge
   - bioconda
 dependencies:
-  - python=3.6
+  - python=3.9
+  - pip=21.2.1
   - kraken2
   - pip:
-    - ncbi-datasets-pylib
+    - ncbi-datasets-pylib==12.6.0
