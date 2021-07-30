@@ -2,6 +2,7 @@ name: dataset
 channels:
   - bioconda
 dependencies:
+  - python=3.6
   - kraken2
   - pip:
     - ncbi-datasets-pylib
