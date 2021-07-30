@@ -85,21 +85,23 @@ if args.tax in namestax:
         else:
             genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(parent))
         i=0
-        for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
-            #print(assembly.org.sci_name)
-            sciname_orig=assembly.org.sci_name
-            strainname=assembly.org.strain
-            #print(sciname_orig)
-            if strainname != None:
-                if strainname in sciname_orig and 'sp' not in sciname_orig:
-                    sciname=sciname_orig.replace(strainname,'').strip()
+        print(genome_summary.assemblies)
+        if genome_summary.assemblies is not None:
+            for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                #print(assembly.org.sci_name)
+                sciname_orig=assembly.org.sci_name
+                strainname=assembly.org.strain
+                #print(sciname_orig)
+                if strainname != None:
+                    if strainname in sciname_orig and 'sp' not in sciname_orig:
+                        sciname=sciname_orig.replace(strainname,'').strip()
+                    else:
+                        sciname=sciname_orig
                 else:
                     sciname=sciname_orig
-            else:
-                sciname=sciname_orig
-            #print(sciname)
-            if sciname != args.tax:
-                i=i+1
+                #print(sciname)
+                if sciname != args.tax:
+                    i=i+1
         if i > 0:
             break
         parent = taxparents[parent]
