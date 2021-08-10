@@ -5,6 +5,7 @@ import configparser
 import os
 import sys
 import glob
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", type=str, action='store', dest='out',help='define report file')
@@ -40,15 +41,24 @@ def Average(lst):
 
 pdf = FPDF()
 pdf.add_page()
+reportdict={}
 
 wd=os.path.dirname(args.rep)
 shortname=args.out.split('.report.pdf')[0].split('/')[-1]
 totallines=0
-ctgs=[]
-for filename in glob.glob(wd+'/*readslist'):
+ctgstotal=[]
+for filename in glob.glob(wd+'/*ProkSSU.readslist'):
     num_lines = sum(1 for line in open(filename))
     totallines=totallines+num_lines
-    ctgs = tuple(open(filename, 'r'))
+    ctgs = list(open(filename, 'r'))
+    ctgstotal.extend(ctgs)
+
+for filename in glob.glob(wd+'/*ProkSSU.microsporidia.readslist'):
+    for line in open(filename):
+        ctg=line.strip().split(':')[0]
+        if ctg not in ctgstotal:
+            ctgstotal.append(ctg)
+            totallines=totallines+1
 
 pdf.set_font("Arial", "B", size=12)
 #o.write(shortname+'\n')
@@ -57,26 +67,33 @@ pdf.set_font("Arial", size=10)
 #o.write("There are "+str(totallines)+" contigs detected containing the SSU locus:\n")
 pdf.cell(200, 6, txt="There are "+str(totallines)+" contigs detected containing the SSU locus:", ln=1, align="L")
 ctgstring=""
-for ctg in ctgs:
+for ctg in ctgstotal:
+    print(ctg)
     ctg=ctg.strip()
     ctgstring=ctgstring+','+ctg
     #o.write(ctg+'\n')
 ctgstringfinal=ctgstring[1:]
 pdf.cell(200, 6, txt=ctgstringfinal, ln=1, align="L")
+reportdict['ContigsWithSSU']=ctgstotal
 
 #o.write("\nThese loci are annotated as:\n")
 pdf.cell(200, 6,ln=1, align="L")
 pdf.cell(200, 6, txt="These loci are annotated as:", ln=1, align="L")
 annotated=wd+'/'+shortname+'.ProkSSU.reduced.SILVA.genus.txt'
+specieslist=[]
 k=open(annotated,'r')
 for line in k:
     line=line.strip()
     #o.write(line+'\n')
+    specieslist.append(line)
     pdf.cell(200, 6, txt=line, ln=1, align="L")
 k.close()
+reportdict['SpeciesPresent']=specieslist
 
+reportdict['Families']={}
 for filename in glob.glob(wd+'/*/kraken.reads'):
     genusname=filename.split('/')[-2]
+    reportdict['Families'][genusname]={}
     pdf.set_font("Arial", "B", size=12)
     pdf.cell(200,12,txt=genusname, ln=1, align="L")
     pdf.set_font("Arial", size=10)
@@ -91,11 +108,14 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
             percentage=float(line.split('\t')[0])
     m.close()
     pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads ("+str(percentage)+"%) classified by Kraken as "+genusname+"." , ln=1, align="L")
+    reportdict['Families'][genusname]['ClassifiedReads']=num_lines
+    reportdict['Families'][genusname]['ClassifiedReadsPercentage']=percentage
     for buscooutput in glob.glob(wd+'/'+genusname+'/buscoReads/busco/short_summary.specific.*.busco.txt'):
         k=open(buscooutput,'r')
         for line in k:
             line=line.strip()
             if line.startswith('C'):
+                reportdict['Families'][genusname]['Busco_ClassifiedReads']=line
                 pdf.cell(200, 6, txt=line, ln=1, align="L")
         k.close()
     pdf.cell(200, 6,ln=1, align="L")
@@ -115,6 +135,7 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
         for line in k:
             line=line.strip()
             if line.startswith('C'):
+                reportdict['Families'][genusname]['Busco_Assembly']=line
                 pdf.cell(200, 6, txt=line, ln=1, align="L")
         k.close()
     pdf.cell(200, 6,ln=1, align="L")
@@ -150,6 +171,9 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     mblen="{:.2f}".format(float(totallen/1000000))+"Mb"
     pdf.cell(200, 6, txt="There are "+str(num_lines_reads)+" reads mapping to the full length of "+str(num_contigs)+" contigs ("+mblen+") containing BUSCO genes " , ln=1, align="L")
     pdf.cell(200, 6, txt="and/or mapping to refseq genomes." , ln=1, align="L")
+    reportdict['Families'][genusname]['BuscoNucmer_Assembly_Contigs']=num_contigs
+    reportdict['Families'][genusname]['BuscoNucmer_Assembly_ContigLength']=mblen
+    reportdict['Families'][genusname]['BuscoNucmer_Assembly_Reads']=num_lines_reads
 
     totalfraction="{:.2f}".format(float(num_lines_reads/num_lines)*100)
     if (float(num_lines_reads/num_lines)*100) < 80:
@@ -199,11 +223,15 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
             line=line.strip()
             if line.startswith('C'):
                 pdf.cell(200, 6, txt=line, ln=1, align="L")
+                reportdict['Families'][genusname]['Busco_Re-Assembly']=line
         k.close()
     putreadids=wd+'/'+genusname+'/'+genusname+'.assembly.unmapped.reads'
     num_lines_put = sum(1 for line in open(putreadids))
     pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
     pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    #
+    reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Contigs']=buscocontigs
+    reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_ContigLength']=b_mblen
+    reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Reads']=num_lines_put
     #refseqfile=args.datadir+'/'+genusname+'/'+genusname+'.refseq.log'
     #genomesize=[]
     #k=open(refseqfile,'r')
@@ -219,3 +247,7 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     if os.path.getsize(imagename) > 0:
         pdf.image(imagename,w=120,h=120)
 pdf.output(args.out)
+
+filename_json=args.out.split('.report.pdf')[0]+'.json'
+with open(filename_json, 'w') as fp:
+    json.dump(reportdict, fp)
