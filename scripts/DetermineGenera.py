@@ -33,19 +33,26 @@ def readNames(names_tax_file):
     tax_names = {}
     tax_names_reverse= {}
     tax_names_sci = {}
+    multiple_names={}
     with open(names_tax_file, 'r') as nodes_tax:
         for line in nodes_tax:
             node = [field.strip() for field in line.split('|')]
             if 'scientific' in line or 'synonym' in line:
                 if 'synonym' in line and 'Bacteria' == node[1]:
-                    #aparantly there exists as class of walking sticks called Bacteria Latreilla (629395), that have as synonym name Bacteria
+                    #apparently there exists as class of walking sticks called Bacteria Latreilla (629395), that have as synonym name Bacteria
                     print('wrong Bacteria')
                 else:
-                    tax_names[node[1]] = node[0]
-                    tax_names_reverse[node[0]] = node[1]
+                    if node[1] in tax_names:
+                        orig=tax_names[node[1]]
+                        multiple_names[node[1]]=[orig,node[0]]
+                        tax_names[node[1]]=node[0]
+                        tax_names_reverse[node[0]] = node[1]
+                    else:
+                        tax_names[node[1]] = node[0]
+                        tax_names_reverse[node[0]] = node[1]
             if 'scientific' in line:
                 tax_names_sci[node[0]] = node[1]
-    return tax_names_reverse,tax_names,tax_names_sci
+    return tax_names_reverse,tax_names,tax_names_sci,multiple_names
 
 '''
 def readNodes(nodes_tax_file):
@@ -147,7 +154,7 @@ api_instance = ncbi.datasets.GenomeApi(ncbi.datasets.ApiClient())
 
 # determine the lineage where your tax id belongs to (lineage taken until upper level = args.type)
 taxparents,taxtypes=readNodes(args.nodesfile)
-taxnames,namestax,taxnames_sci=readNames(args.namesfile)
+taxnames,namestax,taxnames_sci,multiple_names=readNames(args.namesfile)
 
 eukgens=[]
 prokgens=[]
@@ -180,12 +187,33 @@ for line in k:
     print(sciname)
     if sciname in namestax:
         #print(sciname)
-        lineage=getTaxParent(taxparents,taxtypes,namestax[sciname],args.type)
-        fulllineage=getTaxParent(taxparents,taxtypes,namestax[sciname],'superkingdom')
-        cladelineage=getTaxParent(taxparents,taxtypes,namestax[sciname],'order')
-        rootlevelname=taxnames[fulllineage[namestax[sciname]][-1]]
-        cladelevelname=taxnames[cladelineage[namestax[sciname]][-1]]
-        if taxtypes[namestax[sciname]] == args.type:
+        taxid_line=0
+        if sciname in multiple_names :
+            print(sciname)
+            found_true_lineage=False
+            for elem in multiple_names[sciname]:
+                lineage=getTaxParent(taxparents,taxtypes,elem,args.type)
+                fulllineage=getTaxParent(taxparents,taxtypes,elem,'superkingdom')
+                cladelineage=getTaxParent(taxparents,taxtypes,elem,'order')
+                rootlevelname=taxnames[fulllineage[elem][-1]]
+                cladelevelname=taxnames[cladelineage[elem][-1]]
+                print(rootlevelname)
+                print(cladelevelname)
+                if rootlevelname in line.split(';')[0]:
+                    taxid_line=elem
+                    found_true_lineage=True
+                    print(rootlevelname)
+                    break
+            if found_true_lineage == False:
+                taxid_line=multiple_names[sciname][0]
+        else:
+            taxid_line=namestax[sciname]
+            lineage=getTaxParent(taxparents,taxtypes,namestax[sciname],args.type)
+            fulllineage=getTaxParent(taxparents,taxtypes,namestax[sciname],'superkingdom')
+            cladelineage=getTaxParent(taxparents,taxtypes,namestax[sciname],'order')
+            rootlevelname=taxnames[fulllineage[namestax[sciname]][-1]]
+            cladelevelname=taxnames[cladelineage[namestax[sciname]][-1]]
+        if taxtypes[taxid_line] == args.type:
             print('FAMILY:'+sciname+' CLADE:'+cladelevelname)
             taxlevelname=sciname
             if 'Eukaryota' == rootlevelname:
@@ -197,8 +225,9 @@ for line in k:
             #os.system(cmd)
             foundlevel = False
             i=0
-            for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
-                i=i+1
+            if genome_summary.assemblies is not None:
+                for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                    i=i+1
             #with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
             #    distros_dict = json.load(f)
             #    if distros_dict:
@@ -228,10 +257,10 @@ for line in k:
                     eukgens.append(fulllineage_euk)
                 elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
                     prokgens.append(taxlevelname)
-        elif lineage[namestax[sciname]] != None:
+        elif lineage[taxid_line] != None:
             print('DIFFERENT THAN FAMILY:'+sciname+ ' CLADE:'+cladelevelname)
-            taxlevelname=taxnames_sci[lineage[namestax[sciname]][-1]]
-            if int(lineage[namestax[sciname]][-1]) != 1:
+            taxlevelname=taxnames_sci[lineage[taxid_line][-1]]
+            if int(lineage[taxid_line][-1]) != 1:
                 if 'Eukaryota' == rootlevelname:
                     genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
                     #cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
@@ -241,8 +270,9 @@ for line in k:
                 #os.system(cmd)
                 foundlevel = False
                 i=0
-                for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
-                    i=i+1
+                if genome_summary.assemblies is not None:
+                    for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                        i=i+1
                 #with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
                 #    distros_dict = json.load(f)
                 #    if distros_dict:
