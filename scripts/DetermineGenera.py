@@ -248,15 +248,16 @@ for line in k:
                     prokgens.append(taxlevelname)
             else:
                 print('No genomes in databases')
-                taxlevelname=cladelevelname
-                if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                    fulllineage_euk=taxlevelname
-                    for elem in getTaxParent(taxparents,taxtypes,namestax[taxlevelname],'superkingdom')[namestax[taxlevelname]]:
-                        fulllineage_euk=fulllineage_euk+','+taxnames[elem]
-                    print(fulllineage_euk)
-                    eukgens.append(fulllineage_euk)
-                elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                    prokgens.append(taxlevelname)
+                if cladelevelname != 'root':
+                    taxlevelname=cladelevelname
+                    if 'Eukaryota' == rootlevelname and taxlevelname not in eukgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                        fulllineage_euk=taxlevelname
+                        for elem in getTaxParent(taxparents,taxtypes,namestax[taxlevelname],'superkingdom')[namestax[taxlevelname]]:
+                            fulllineage_euk=fulllineage_euk+','+taxnames[elem]
+                        print(fulllineage_euk)
+                        eukgens.append(fulllineage_euk)
+                    elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                        prokgens.append(taxlevelname)
         elif lineage[taxid_line] != None:
             print('DIFFERENT THAN FAMILY:'+sciname+ ' CLADE:'+cladelevelname)
             taxlevelname=taxnames_sci[lineage[taxid_line][-1]]
