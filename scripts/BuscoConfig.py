@@ -61,22 +61,29 @@ if '_' in genus:
     genus=genus.replace('_',' ')
 
 busco_dbs=[]
+busco_short=[]
 m=open(args.db,'r')
 for line in m:
     line=line.strip()
     if 'db' in line:
         #if 'eukaryota' in line:
         #    break
-        dbname=line.split(' ')[-1].split('_')[0]
-        busco_dbs.append(dbname)
+        dbname=line.split(' ')[-1].split('_odb')[0]
+        #print(dbname)
+        dbname2=line.split(' ')[-1].split('_')[0]
+        busco_short.append(dbname2)
 
 buscoset = 'Bacteria'
 if genus in namestax:
     taxid = namestax[genus]
     parent = taxparents[taxid]
     while parent != taxparents[parent]:
-        if taxnames[parent].lower() in busco_dbs:
+        print(taxnames[parent])
+        if taxnames[parent].lower() in busco_short:
             buscoset = taxnames[parent]
+            print(buscoset)
+            if taxnames[parent].lower()+"_phylum" in busco_dbs:
+                buscoset = taxnames[parent].lower()+"_phylum"
             break
         parent = taxparents[parent]
 
