@@ -68,28 +68,62 @@ pdf.set_font("Arial", size=10)
 pdf.cell(200, 6, txt="There are "+str(totallines)+" contigs detected containing the SSU locus:", ln=1, align="L")
 ctgstring=""
 for ctg in ctgstotal:
-    print(ctg)
+    #print(ctg)
     ctg=ctg.strip()
     ctgstring=ctgstring+','+ctg
     #o.write(ctg+'\n')
 ctgstringfinal=ctgstring[1:]
 pdf.cell(200, 6, txt=ctgstringfinal, ln=1, align="L")
-reportdict['ContigsWithSSU']=ctgstotal
+
+#reportdict['ContigsWithSSU']=ctgstotal
 
 #o.write("\nThese loci are annotated as:\n")
 pdf.cell(200, 6,ln=1, align="L")
 pdf.cell(200, 6, txt="These loci are annotated as:", ln=1, align="L")
 annotated=wd+'/'+shortname+'.ProkSSU.reduced.SILVA.genus.txt'
-specieslist=[]
+#specieslist=[]
 k=open(annotated,'r')
 for line in k:
     line=line.strip()
     #o.write(line+'\n')
-    specieslist.append(line)
+    #specieslist.append(line)
     pdf.cell(200, 6, txt=line, ln=1, align="L")
 k.close()
-reportdict['SpeciesPresent']=specieslist
+#reportdict['SpeciesPresent']=specieslist
 
+reportdict['SpeciesPresent']={}
+annotated2=wd+'/'+shortname+'.ProkSSU.reduced.SILVA.tax'
+k=open(annotated2,'r')
+for line in k:
+    line=line.strip()
+    if line.startswith('name'):
+        type=line.split('\t')[1].split('lca_tax_')[1]
+    else:
+        ctgname=line.split('\t')[0]
+        tax=line.split('\t')[1]
+        if ctgname not in reportdict['SpeciesPresent']:
+            reportdict['SpeciesPresent'][ctgname]={}
+        reportdict['SpeciesPresent'][ctgname][type]=tax
+k.close()
+
+annotated3=wd+'/'+shortname+'.ProkSSU.reduced.fa.clstr'
+clusterctgs=[]
+k=open(annotated3,'r')
+for line in k:
+    line=line.strip()
+    if line.startswith('>'):
+        if len(clusterctgs) > 0:
+            reportdict['SpeciesPresent'][representative]['Cluster']=clusterctgs
+        clusterctgs=[]
+    else:
+        ctgname=line.split('\t')[1].split('>')[1].split('...')[0]
+        length=line.split('\t')[1].split('nt')[0]
+        clusterctgs.append(ctgname)
+        if '*' in line:
+            representative=ctgname
+            reportdict['SpeciesPresent'][ctgname]['SSUlength']=length
+reportdict['SpeciesPresent'][representative]['Cluster']=clusterctgs
+k.close()
 reportdict['Families']={}
 for filename in glob.glob(wd+'/*/kraken.reads'):
     genusname=filename.split('/')[-2]
@@ -110,6 +144,16 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads ("+str(percentage)+"%) classified by Kraken as "+genusname+"." , ln=1, align="L")
     reportdict['Families'][genusname]['ClassifiedReads']=num_lines
     reportdict['Families'][genusname]['ClassifiedReadsPercentage']=percentage
+    readfile=wd+'/'+genusname+'/'+genusname+".finalreads.fa"
+    counter=0
+    k=open(readfile,'r')
+    for line in k:
+        line=line.strip()
+        if line.startswith('>'):
+            counter=counter+1
+    k.close()
+    if counter > 100000:
+        reportdict['Families'][genusname]['Busco_ClassifiedReads']="Too many reads - NA "
     for buscooutput in glob.glob(wd+'/'+genusname+'/buscoReads/busco/short_summary.specific.*.busco.txt'):
         k=open(buscooutput,'r')
         for line in k:
@@ -229,7 +273,7 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     num_lines_put = sum(1 for line in open(putreadids))
     pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
     pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    #
-    reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Contigs']=buscocontigs
+    reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Contigs']=len(buscocontigs)
     reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_ContigLength']=b_mblen
     reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Reads']=num_lines_put
     #refseqfile=args.datadir+'/'+genusname+'/'+genusname+'.refseq.log'
