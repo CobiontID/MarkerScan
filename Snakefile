@@ -933,7 +933,7 @@ rule RunBuscoReads:
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
-			linecount=$(wc -l < {input.circgenome})
+			linecount=$(grep -c '>' < {input.circgenome})
 			if [ $linecount -le 100000 ]; then
 				python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
 				busco --list-datasets > {output.buscodbs}
