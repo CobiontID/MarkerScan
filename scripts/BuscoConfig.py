@@ -72,6 +72,7 @@ for line in m:
         #print(dbname)
         dbname2=line.split(' ')[-1].split('_')[0]
         busco_short.append(dbname2)
+        busco_dbs.append(dbname)
 
 buscoset = 'Bacteria'
 if genus in namestax:
