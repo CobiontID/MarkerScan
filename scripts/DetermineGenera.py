@@ -272,6 +272,7 @@ for line in k:
                             if i > 0:
                                 eukgens.append(fulllineage_euk)
                     elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
+                        genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
                         i=0
                         if genome_summary.assemblies is not None:
                             for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
