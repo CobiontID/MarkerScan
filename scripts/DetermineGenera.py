@@ -44,7 +44,10 @@ def readNames(names_tax_file):
                 else:
                     if node[1] in tax_names:
                         orig=tax_names[node[1]]
-                        multiple_names[node[1]]=[orig,node[0]]
+                        if not node[1] in multiple_names:
+                            multiple_names[node[1]]=[]
+                            multiple_names[node[1]].append(orig)
+                        multiple_names[node[1]].append(node[0])
                         tax_names[node[1]]=node[0]
                         tax_names_reverse[node[0]] = node[1]
                     else:
@@ -191,21 +194,27 @@ for line in k:
         if sciname in multiple_names :
             print(sciname)
             found_true_lineage=False
+            besttaxid=""
+            bestcounter=0
             for elem in multiple_names[sciname]:
                 lineage=getTaxParent(taxparents,taxtypes,elem,args.type)
                 fulllineage=getTaxParent(taxparents,taxtypes,elem,'superkingdom')
-                cladelineage=getTaxParent(taxparents,taxtypes,elem,'order')
-                rootlevelname=taxnames[fulllineage[elem][-1]]
-                cladelevelname=taxnames[cladelineage[elem][-1]]
-                print(rootlevelname)
-                print(cladelevelname)
-                if rootlevelname in line.split(';')[0]:
-                    taxid_line=elem
-                    found_true_lineage=True
-                    print(rootlevelname)
-                    break
-            if found_true_lineage == False:
-                taxid_line=multiple_names[sciname][0]
+                counterhere=0
+                for x in fulllineage[elem]:
+                    #print(x)
+                    cnt=line.split(';').count(taxnames[x])
+                    if cnt > 0:
+                        print(taxnames[x])
+                        counterhere=counterhere+1
+                if int(counterhere) > int(bestcounter):
+                    bestcounter=counterhere
+                    besttaxid=elem
+            taxid_line=besttaxid
+            lineage=getTaxParent(taxparents,taxtypes,taxid_line,args.type)
+            fulllineage=getTaxParent(taxparents,taxtypes,taxid_line,'superkingdom')
+            cladelineage=getTaxParent(taxparents,taxtypes,taxid_line,'order')
+            rootlevelname=taxnames[fulllineage[taxid_line][-1]]
+            cladelevelname=taxnames[cladelineage[taxid_line][-1]]
         else:
             taxid_line=namestax[sciname]
             lineage=getTaxParent(taxparents,taxtypes,namestax[sciname],args.type)
