@@ -264,9 +264,20 @@ for line in k:
                         for elem in getTaxParent(taxparents,taxtypes,namestax[taxlevelname],'superkingdom')[namestax[taxlevelname]]:
                             fulllineage_euk=fulllineage_euk+','+taxnames[elem]
                         print(fulllineage_euk)
-                        eukgens.append(fulllineage_euk)
+                        genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname.split(',')[0]))
+                        i=0
+                        if genome_summary.assemblies is not None:
+                            for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                                i=i+1
+                            if i > 0:
+                                eukgens.append(fulllineage_euk)
                     elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                        prokgens.append(taxlevelname)
+                        i=0
+                        if genome_summary.assemblies is not None:
+                            for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                                i=i+1
+                            if i > 0:
+                                prokgens.append(taxlevelname)
         elif lineage[taxid_line] != None:
             print('DIFFERENT THAN FAMILY:'+sciname+ ' CLADE:'+cladelevelname)
             taxlevelname=taxnames_sci[lineage[taxid_line][-1]]
@@ -311,9 +322,21 @@ for line in k:
                             for elem in getTaxParent(taxparents,taxtypes,namestax[taxlevelname],'superkingdom')[namestax[taxlevelname]]:
                                 fulllineage_euk=fulllineage_euk+','+taxnames[elem]
                             print(fulllineage_euk)
-                            eukgens.append(fulllineage_euk)
+                            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname.split(',')[0]))
+                            i=0
+                            if genome_summary.assemblies is not None:
+                                for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                                    i=i+1
+                                    if i > 0:
+                                        eukgens.append(fulllineage_euk)
                         elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                            prokgens.append(taxlevelname)    
+                            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                            i=0
+                            if genome_summary.assemblies is not None:
+                                for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
+                                    i=i+1
+                                    if i > 0:
+                                        prokgens.append(taxlevelname)    
 
 file1=args.outdir+"/prok."+args.suffix
 k=open(file1,'w')
