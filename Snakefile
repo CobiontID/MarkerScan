@@ -15,6 +15,7 @@ sciname_goi = config["sci_name"]
 SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
 microsporidiadb = config["microsporidiadb"]
+full=config["full"]
 
 rule all:
 	input:
@@ -325,7 +326,7 @@ checkpoint GetGenera:
 		SILVA16Sgenus = expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),
 		#screenfile = "{workingdirectory}/refseq202.screen",
 		#asminfo = expand("{datadir}/mash/assembly_summary_refseq.txt",datadir=config["datadir"]),
-		donetaxon = "{workingdirectory}/taxdownload.done.txt"
+		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 	output:
 		generadir = directory("{workingdirectory}/genera")
 	params:
@@ -335,19 +336,21 @@ checkpoint GetGenera:
 	shell:
 		"""
 		mkdir {output.generadir}
-		python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {params.taxnames} -no {params.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}'
-		while read p
-		do
-			shortname=`echo $p | cut -d, -f1`	
-			echo $p > {output.generadir}/genus.$shortname.txt
-		done < {output.generadir}/euk.SSU.genera_taxonomy.txt
-		while read p
-		do
-			echo "Bacteria/Archaea" > {output.generadir}/genus.$p.txt
-			#touch  {output.generadir}/genus.$p.txt
-		done < {output.generadir}/prok.SSU.genera_taxonomy.txt
-		rm {output.generadir}/euk.SSU.genera_taxonomy.txt
-		rm {output.generadir}/prok.SSU.genera_taxonomy.txt
+		if [ -v {full} ] && [ {full} == "True" ]; then
+			python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {params.taxnames} -no {params.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}'
+			while read p
+			do
+				shortname=`echo $p | cut -d, -f1`	
+				echo $p > {output.generadir}/genus.$shortname.txt
+			done < {output.generadir}/euk.SSU.genera_taxonomy.txt
+			while read p
+			do
+				echo "Bacteria/Archaea" > {output.generadir}/genus.$p.txt
+				#touch  {output.generadir}/genus.$p.txt
+			done < {output.generadir}/prok.SSU.genera_taxonomy.txt
+			rm {output.generadir}/euk.SSU.genera_taxonomy.txt
+			rm {output.generadir}/prok.SSU.genera_taxonomy.txt
+		fi
 		"""
 
 rule DownloadRefSeqGenus:
