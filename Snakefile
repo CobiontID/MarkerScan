@@ -336,7 +336,7 @@ checkpoint GetGenera:
 	shell:
 		"""
 		mkdir {output.generadir}
-		if [ -v {full} ] && [ {full} == "True" ]; then
+		if [ {full} ]; then
 			python {scriptdir}/DetermineGenera.py -i {input.SILVA16Sgenus} -t family -na {params.taxnames} -no {params.taxnodes} -od {output} -suf SSU.genera_taxonomy.txt -g '{sciname_goi}'
 			while read p
 			do
