@@ -226,10 +226,10 @@ for line in k:
             print('FAMILY:'+sciname+' CLADE:'+cladelevelname)
             taxlevelname=sciname
             if 'Eukaryota' == rootlevelname:
-                genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),page_size=5000)
                 #cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
             else:
-                genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),filters_assembly_source='refseq')
+                genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),filters_assembly_source='refseq',page_size=5000)
                 #cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
             #os.system(cmd)
             foundlevel = False
@@ -264,7 +264,7 @@ for line in k:
                         for elem in getTaxParent(taxparents,taxtypes,namestax[taxlevelname],'superkingdom')[namestax[taxlevelname]]:
                             fulllineage_euk=fulllineage_euk+','+taxnames[elem]
                         print(fulllineage_euk)
-                        genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname.split(',')[0]))
+                        genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname.split(',')[0]),page_size=5000)
                         i=0
                         if genome_summary.assemblies is not None:
                             for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
@@ -272,7 +272,7 @@ for line in k:
                             if i > 0:
                                 eukgens.append(fulllineage_euk)
                     elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                        genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                        genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),page_size=5000)
                         i=0
                         if genome_summary.assemblies is not None:
                             for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
@@ -284,10 +284,10 @@ for line in k:
             taxlevelname=taxnames_sci[lineage[taxid_line][-1]]
             if int(lineage[taxid_line][-1]) != 1:
                 if 'Eukaryota' == rootlevelname:
-                    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),page_size=5000)
                     #cmd=str(args.datasets)+" assembly-descriptors tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
                 else:
-                    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),filters_assembly_source='refseq')
+                    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),filters_assembly_source='refseq',page_size=5000)
                     #cmd=str(args.datasets)+" assembly-descriptors --refseq tax-name '"+str(taxlevelname)+"' > "+str(args.outdir)+"/log."+str(taxlevelname)+".json"
                 #os.system(cmd)
                 foundlevel = False
@@ -323,7 +323,7 @@ for line in k:
                             for elem in getTaxParent(taxparents,taxtypes,namestax[taxlevelname],'superkingdom')[namestax[taxlevelname]]:
                                 fulllineage_euk=fulllineage_euk+','+taxnames[elem]
                             print(fulllineage_euk)
-                            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname.split(',')[0]))
+                            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname.split(',')[0]),page_size=5000)
                             i=0
                             if genome_summary.assemblies is not None:
                                 for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
@@ -331,7 +331,7 @@ for line in k:
                                     if i > 0:
                                         eukgens.append(fulllineage_euk)
                         elif taxlevelname not in prokgens and taxlevelname != spoifamily and cladelevelname != spoiclade:
-                            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname))
+                            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxlevelname),page_size=5000)
                             i=0
                             if genome_summary.assemblies is not None:
                                 for assembly in map(lambda d: d.assembly, genome_summary.assemblies):

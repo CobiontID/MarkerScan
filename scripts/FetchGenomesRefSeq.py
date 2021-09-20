@@ -30,9 +30,9 @@ if not os.path.exists(args.dir):
 
 # fetch data from NCBI via 'datasets' of all species from that clade
 if args.refs == 'yes':
-    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxname),filters_assembly_source='refseq')
+    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxname),filters_assembly_source='refseq',page_size=5000)
 else:
-    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxname))
+    genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(taxname),page_size=5000)
 
 SpeciesDictionary={}
 i=0
@@ -49,6 +49,7 @@ for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
             sciname=sciname_orig
     else:
         sciname=sciname_orig
+    print(sciname)
     if sciname not in SpeciesDictionary:
         SpeciesDictionary[sciname]={}
         SpeciesDictionary[sciname]['ReleaseDate']=assembly.submission_date
