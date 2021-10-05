@@ -395,7 +395,7 @@ rule DownloadRefSeqGenus:
 					python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 				fi
 				if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
-					unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
+					#unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
 					python {scriptdir}/AddTaxIDKraken.py -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq -o {datadir}/genera/{params.taxname}.kraken.tax.ffn
 				fi
 			fi
@@ -409,7 +409,7 @@ rule DownloadRefSeqGenus:
 				python {scriptdir}/FetchGenomesRefSeq.py --refseq yes --taxname {input.generafiles} --dir {datadir}/genera/{params.taxname} > {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log
 			fi
 			if [ -s {datadir}/genera/{params.taxname}/{params.taxname}.refseq.log ]; then
-				unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
+				#unzip -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq {datadir}/genera/{params.taxname}/RefSeq.{params.taxname}.zip
 				python {scriptdir}/AddTaxIDKraken.py -d {datadir}/genera/{params.taxname}/{params.taxname}.Refseq -o {datadir}/genera/{params.taxname}.kraken.tax.ffn
 			else
 				touch {datadir}/genera/{params.taxname}.kraken.tax.ffn

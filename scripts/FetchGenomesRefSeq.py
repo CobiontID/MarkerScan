@@ -82,13 +82,34 @@ if len(accs) > 0:
     print("Number of necessary GFs "+str(nrgfs))
     print(f'Download a package for {accs}.')
     print('Begin download of genome data package ...')
+    print(str(len(accs))+' genomes')
     zipfile_name = str(args.dir)+"/"+"/RefSeq."+str(taxname_orig)+".zip"
-    api_response = api_instance.download_assembly_package(accs,exclude_sequence=False, hydrated='FULLY_HYDRATED',_preload_content=False,filename=zipfile_name)
-    with open(zipfile_name, 'wb') as f:
-        f.write(api_response.data)
-    print('Download complete')
-    package = dataset.AssemblyDataset(zipfile_name)
-    print(package.get_catalog())
+    for t in range(0, len(accs), 100):
+        accshort=accs[t:t + 100]
+        try:
+            zipfile_name_part = str(args.dir)+"/"+"/RefSeq."+str(taxname_orig)+".part"+str(t)+".zip"
+            api_response = api_instance.download_assembly_package(accshort,exclude_sequence=False, hydrated='FULLY_HYDRATED',_preload_content=False,filename=zipfile_name_part)
+            with open(zipfile_name_part, 'wb') as f:
+                f.write(api_response.data)
+            print('Download complete part '+str(t))
+            cmd="unzip -d "+str(args.dir)+"/"+str(taxname_orig)+".RefSeq.part"+str(t)+" "+str(args.dir)+"/"+"/RefSeq."+str(taxname_orig)+".part"+str(t)+".zip"
+            os.system(cmd)
+        except ncbi.datasets.openapi.ApiException as e:
+            print("Exception when calling GenomeApi->download_assembly_package: %s\n" % e)
+    cmd="mkdir "+str(args.dir)+"/"+str(taxname_orig)+".Refseq"
+    os.system(cmd)
+    cmd="mkdir "+str(args.dir)+"/"+str(taxname_orig)+".Refseq/ncbi_dataset"
+    os.system(cmd)
+    cmd="mkdir "+str(args.dir)+"/"+str(taxname_orig)+".Refseq/ncbi_dataset/data"
+    os.system(cmd)
+    cmd="cp -r "+str(args.dir)+"/"+str(taxname_orig)+".RefSeq.part*/ncbi_dataset/data/G* "+str(args.dir)+"/"+str(taxname_orig)+".Refseq/ncbi_dataset/data/"
+    os.system(cmd)
+    cmd="cat "+str(args.dir)+"/"+str(taxname_orig)+".RefSeq.part*/ncbi_dataset/data/assembly_data_report.jsonl >> "+str(args.dir)+"/"+str(taxname_orig)+".Refseq/ncbi_dataset/data/assembly_data_report.jsonl"
+    os.system(cmd)
+    cmd="cat "+str(args.dir)+"/"+str(taxname_orig)+".RefSeq.part*/ncbi_dataset/data/dataset_catalog.json >> "+str(args.dir)+"/"+str(taxname_orig)+".Refseq/ncbi_dataset/data/dataset_catalog.json"
+    os.system(cmd)
+    cmd="rm -r "+str(args.dir)+"/"+"/RefSeq."+str(taxname_orig)+".part*.zip "+str(args.dir)+"/"+str(taxname_orig)+".RefSeq.part*"
+    os.system(cmd)
 else:
     print('No genomes available')
     cmd="touch "+str(args.dir)+"/"+str(taxname_orig)+".download.log"
