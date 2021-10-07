@@ -15,6 +15,7 @@ sciname_goi = config["sci_name"]
 SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
 microsporidiadb = config["microsporidiadb"]
+acaridb = config["acaridb"]
 full=config["full"]
 
 rule all:
@@ -275,6 +276,10 @@ rule ClassifySSU:
 		SILVA_tax = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax",
 		blastout = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt",
 		blastgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.genus.txt",
+		aclist = "{workingdirectory}/{shortname}.ProkSSU.acari.list.txt",
+		fastaAcari = "{workingdirectory}/{shortname}.ProkSSU.acari.fa",
+		blastacari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.blast.txt",
+		blastgenusAcari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.genus.txt",
 		SILVA16Sgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.genus.txt"
 	params:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
@@ -295,6 +300,15 @@ rule ClassifySSU:
 		else
 			touch {output.blastout}
 			touch {output.blastgenus}
+		fi
+		if grep -Fq 'Acari' in {output.SILVA_tax}; then
+			cat {output.SILVA_tax} | grep 'Acari' | cut -f1 | sort | uniq > {output.aclist}
+			python {scriptdir}/FetchSSUFasta.py -f {input.fasta16SLociReduced} -i {output.aclist} -o {output.fastaAcari}
+			blastn -db {acaridb} -query {output.fastaAcari} -out {output.blastacari} -outfmt 6
+			python {scriptdir}/ParseBlastLineage.py -b {output.blastacari} -na {params.taxnames} -no {params.taxnodes} > {output.blastgenusAcari}
+			cat {output.blastgenusAcari} >> {output.SILVA16Sgenus}
+		else
+			touch {output.aclist} {output.blastacari} {output.fastaAcari} {output.blastgenusAcari}
 		fi
 		"""
 
