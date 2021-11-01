@@ -25,8 +25,9 @@ workingdirectory: $WORKINGDIR
 scriptdir: $SCRIPTDIR
 datadir: $DATADIR
 SSUHMMfile: $dir/SSU_Prok_Euk_Microsporidia.hmm
-datasets: $dir/datasets
 microsporidiadb: $dir/MicrosporidiaSSU_NCBI
+acaridb: $dir/AcariSSU_SILVA_pr2_curated
+full: 1|0
 ```
 
 ## Script to launch the pipeline
