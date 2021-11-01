@@ -23,8 +23,11 @@ for json_str in json_list:
     if 'refseqAssmAccession' in distro['assemblyInfo']:
         acc=distro['assemblyInfo']['refseqAssmAccession']
         #if acc == 'na':
-        acc2=distro['assemblyInfo']['genbankAssmAccession']
-    else:
+        if 'genbankAssmAccession' in distro['assemblyInfo']:
+            acc2=distro['assemblyInfo']['genbankAssmAccession']
+        else:
+            acc2=acc
+    elif 'genbankAssmAccession' in distro['assemblyInfo']:
         acc=distro['assemblyInfo']['genbankAssmAccession']
         acc2=distro['assemblyInfo']['genbankAssmAccession']
     taxid=distro['taxId']
