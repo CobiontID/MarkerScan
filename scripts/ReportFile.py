@@ -219,9 +219,12 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     reportdict['Families'][genusname]['BuscoNucmer_Assembly_ContigLength']=mblen
     reportdict['Families'][genusname]['BuscoNucmer_Assembly_Reads']=num_lines_reads
 
-    totalfraction="{:.2f}".format(float(num_lines_reads/num_lines)*100)
-    if (float(num_lines_reads/num_lines)*100) < 80:
-        pdf.set_font("Arial", "B", size=10)
+    if int(num_lines) > 0:
+        totalfraction="{:.2f}".format(float(num_lines_reads/num_lines)*100)
+        if (float(num_lines_reads/num_lines)*100) < 80:
+            pdf.set_font("Arial", "B", size=10)
+    else:
+        totalfraction=0
     pdf.cell(200, 6, txt="A total fraction of "+str(totalfraction)+"% of the classified kraken reads are removed." , ln=1, align="L")
     pdf.set_font("Arial", size=10)
     pdf.cell(200, 6,ln=1, align="L")
