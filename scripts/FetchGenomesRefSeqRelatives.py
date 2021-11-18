@@ -149,20 +149,38 @@ if args.tax in namestax:
         accs.append(SpeciesDictionary[species]['Identifier'])
     print(f'Download a package for {accs}.')
     print('Begin download of genome data package ...')
-    zipfile_name = str(args.dir)+"/"+"/RefSeq.relatives.zip"
-    api_response = api_instance.download_assembly_package(accs,exclude_sequence=False, hydrated='FULLY_HYDRATED',_preload_content=False,filename=zipfile_name)
-    with open(zipfile_name, 'wb') as f:
-        f.write(api_response.data)
-    print('Download complete')
-    package = dataset.AssemblyDataset(zipfile_name)
-    print(package.get_catalog())
-    cmd="unzip -d "+str(args.dir)+"/relatives.Refseq "+str(args.dir)+"/RefSeq.relatives.zip"
+    #zipfile_name = str(args.dir)+"/"+"/RefSeq.relatives.zip"
+    for t in range(0, len(accs), 3):
+        zipfile_name_part = str(args.dir)+"/"+"/RefSeq.relatives.part"+str(t)+".zip"
+        accshort=accs[t:t + 3]
+        try:
+            api_response = api_instance.download_assembly_package(accshort,exclude_sequence=False, hydrated='FULLY_HYDRATED',_preload_content=False,filename=zipfile_name_part)
+            with open(zipfile_name_part, 'wb') as f:
+                f.write(api_response.data)
+            print('Download complete part '+str(t))
+            cmd="unzip -d "+str(args.dir)+"/relatives.RefSeq.part"+str(t)+" "+str(args.dir)+"/"+"/RefSeq.relatives.part"+str(t)+".zip"
+            os.system(cmd)
+        except ncbi.datasets.openapi.ApiException as e:
+            print("Exception when calling GenomeApi->download_assembly_package: %s\n" % e)
+    cmd="mkdir "+str(args.dir)+"/relatives.Refseq"
     os.system(cmd)
+    cmd="mkdir "+str(args.dir)+"/relatives.Refseq/ncbi_dataset"
+    os.system(cmd)
+    cmd="mkdir "+str(args.dir)+"/relatives.Refseq/ncbi_dataset/data"
+    os.system(cmd)
+    cmd="cp -r "+str(args.dir)+"/relatives.RefSeq.part*/ncbi_dataset/data/G* "+str(args.dir)+"/relatives.Refseq/ncbi_dataset/data/"
+    os.system(cmd)
+    cmd="cat "+str(args.dir)+"/relatives.RefSeq.part*/ncbi_dataset/data/assembly_data_report.jsonl >> "+str(args.dir)+"/relatives.Refseq/ncbi_dataset/data/assembly_data_report.jsonl"
+    os.system(cmd)
+    cmd="cat "+str(args.dir)+"/relatives.RefSeq.part*/ncbi_dataset/data/dataset_catalog.json >> "+str(args.dir)+"/relatives.Refseq/ncbi_dataset/data/dataset_catalog.json"
+    os.system(cmd)
+    cmd="rm -r "+str(args.dir)+"/"+"/RefSeq.relatives.part*.zip "+str(args.dir)+"/relatives.RefSeq.part*"
+    os.system(cmd)    
     cmd="cat "+str(args.dir)+"/relatives.Refseq/ncbi_dataset/data/*/*fna > "+str(args.dir)+"/relatives.Refseq/acc.fasta"
     os.system(cmd)
     cmd="dustmasker -in "+str(args.dir)+"/relatives.Refseq/acc.fasta -outfmt fasta | sed -e '/^>/!s/[a-z]/x/g' > "+str(args.dir)+"/relatives.Refseq/masked.fna"
     os.system(cmd)
-    cmd="rm "+str(args.dir)+"/RefSeq.relatives.zip "+str(args.dir)+"/relatives.Refseq/acc.fasta "
+    cmd="rm "+str(args.dir)+"/relatives.Refseq/acc.fasta "
     os.system(cmd)
 else:
     print('No taxonomic name was not found')
