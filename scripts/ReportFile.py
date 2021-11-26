@@ -131,7 +131,10 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     pdf.set_font("Arial", "B", size=12)
     pdf.cell(200,12,txt=genusname, ln=1, align="L")
     pdf.set_font("Arial", size=10)
-    num_lines = sum(1 for line in open(filename))
+    if os.path.getsize(filename) > 0:
+        num_lines = sum(1 for line in open(filename))
+    else:
+        num_lines = 0
     percentage=0
     krakenrep=wd+'/kraken.report'
     m=open(krakenrep,'r')
