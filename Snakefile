@@ -229,36 +229,29 @@ rule DownloadNCBITaxonomy:
 		if [ -f {input.taxdir}/names.dmp ]; then
 			if [ {input.taxdir}/taxdump.tar.gz.md5 -nt {input.taxdir}/names.dmp ]; then
 				curl -R ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz --output taxdump.tar.gz
-				tar -xvf taxdump.tar.gz
-				mv names.dmp {input.taxdir}/names.dmp
-				mv nodes.dmp {input.taxdir}/nodes.dmp
-				rm division.dmp gencode.dmp citations.dmp delnodes.dmp merged.dmp readme.txt gc.prt taxdump.*
+				tar -C {input.taxdir} -xzf taxdump.tar.gz names.dmp nodes.dmp
+				rm taxdump.tar.gz
 			fi
 		else
 			curl -R ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz --output taxdump.tar.gz
-			tar -xvf taxdump.tar.gz
-			mv names.dmp {input.taxdir}/names.dmp
-			mv nodes.dmp {input.taxdir}/nodes.dmp
-			rm division.dmp gencode.dmp citations.dmp delnodes.dmp merged.dmp readme.txt gc.prt taxdump.*
+			tar -C {input.taxdir} -xzf taxdump.tar.gz names.dmp nodes.dmp
+			rm taxdump.tar.gz
 		fi
-		curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz.md5 --output nucl_gb.accession2taxid.gz.md5
+		curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz.md5 --output {input.taxdir}/nucl_gb.accession2taxid.gz.md5
 		if [ -f {input.taxdir}/nucl_gb.accession2taxid ]; then
-			if [ nucl_gb.accession2taxid.gz.md5 -nt {input.taxdir}/nucl_gb.accession2taxid.gz.md5 ]; then
-				mv nucl_gb.accession2taxid.gz.md5 {input.taxdir}/nucl_gb.accession2taxid.gz.md5
+			if [ {input.taxdir}/nucl_gb.accession2taxid.gz.md5 -nt {input.taxdir}/nucl_gb.accession2taxid ]; then
 				curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz --output nucl_gb.accession2taxid.gz
 				curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz --output nucl_wgs.accession2taxid.gz
-				gunzip nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz
-				mv nucl_wgs.accession2taxid {input.taxdir}/nucl_wgs.accession2taxid
-				mv nucl_gb.accession2taxid {input.taxdir}/nucl_gb.accession2taxid
-			else
-				rm nucl_gb.accession2taxid.gz.md5
+				gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/nucl_gb.accession2taxid
+				gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/nucl_wgs.accession2taxid
+				rm nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz
 			fi
 		else
 			curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz --output nucl_gb.accession2taxid.gz
 			curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz --output nucl_wgs.accession2taxid.gz
-			gunzip nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz
-			mv nucl_wgs.accession2taxid {input.taxdir}/nucl_wgs.accession2taxid
-			mv nucl_gb.accession2taxid {input.taxdir}/nucl_gb.accession2taxid			
+			gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/nucl_gb.accession2taxid
+			gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/nucl_wgs.accession2taxid
+			rm nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz			
 		fi
 		touch {output.donefile}
 		"""
@@ -275,6 +268,7 @@ rule ClassifySSU:
 	output:
 		SILVA_output_embl = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.embl.csv",
 		SILVA_output_silva = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.silva.csv",
+		SILVA_output_ltp = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.ltp.csv",
 		SILVA_output = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.csv",
 		SILVA_tax = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax",
 		blastout = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt",
@@ -291,11 +285,12 @@ rule ClassifySSU:
 	threads: 10
 	shell:
 		"""
-		sina -i {input.fasta16SLociReduced} -o {output.SILVA_output_embl} --db {datadir}/silva/SILVA_SSURef.arb --search --search-min-sim 0.9 -p {threads} --lca-fields tax_embl_ebi_ena --outtype csv
-		sina -i {input.fasta16SLociReduced} -o {output.SILVA_output_silva} --db {datadir}/silva/SILVA_SSURef.arb --search --search-min-sim 0.9 -p {threads} --lca-fields tax_slv --outtype csv
-		cat {output.SILVA_output_embl} {output.SILVA_output_silva} > {output.SILVA_output}
+		sina -i {input.fasta16SLociReduced} -o {output.SILVA_output_embl} --db {datadir}/silva/SILVA_SSURef.arb --search --search-min-sim 0.9 -p {threads} --lca-fields tax_embl_ebi_ena --outtype csv --lca-quorum 0.8 --search-max-result 20
+		sina -i {input.fasta16SLociReduced} -o {output.SILVA_output_silva} --db {datadir}/silva/SILVA_SSURef.arb --search --search-min-sim 0.9 -p {threads} --lca-fields tax_slv --outtype csv --lca-quorum 0.8 --search-max-result 20
+		sina -i {input.fasta16SLociReduced} -o {output.SILVA_output_ltp} --db {datadir}/silva/SILVA_SSURef.arb --search --search-min-sim 0.9 -p {threads} --lca-fields tax_ltp --outtype csv --lca-quorum 0.8 --search-max-result 20
+		cat {output.SILVA_output_embl} {output.SILVA_output_silva} {output.SILVA_output_ltp} > {output.SILVA_output}
 		cut -f1,8 -d',' {output.SILVA_output} | tr ',' '\t' > {output.SILVA_tax}
-		cut -f2 {output.SILVA_tax} | grep -v 'lca_tax_embl_ebi_ena' | grep -v 'lca_tax_slv' | sort | uniq > {output.SILVA16Sgenus} && [[ -s {output.SILVA16Sgenus} ]]
+		cut -f2 {output.SILVA_tax} | grep -v 'lca_tax_embl_ebi_ena' | grep -v 'lca_tax_slv' | grep -v 'lca_tax_ltp' | sort | uniq > {output.SILVA16Sgenus} && [[ -s {output.SILVA16Sgenus} ]]
 		if [ -s {input.fasta16SLociReducedmicro} ]; then
 			blastn -db {microsporidiadb} -query {input.fasta16SLociReducedmicro} -out {output.blastout} -outfmt 6
 			python {scriptdir}/ParseBlastLineage.py -b {output.blastout} -na {params.taxnames} -no {params.taxnodes} > {output.blastgenus}
@@ -362,8 +357,12 @@ checkpoint GetGenera:
 			done < {output.generadir}/euk.SSU.genera_taxonomy.txt
 			while read p
 			do
-				echo "Bacteria/Archaea" > {output.generadir}/genus.$p.txt
-				#touch  {output.generadir}/genus.$p.txt
+				pattern=" |'"
+				if ! [[ $p =~ $pattern ]]
+				then
+					echo "Bacteria/Archaea" > {output.generadir}/genus.$p.txt
+					#touch  {output.generadir}/genus.$p.txt
+				fi
 			done < {output.generadir}/prok.SSU.genera_taxonomy.txt
 			rm {output.generadir}/euk.SSU.genera_taxonomy.txt
 			rm {output.generadir}/prok.SSU.genera_taxonomy.txt
@@ -508,7 +507,7 @@ checkpoint SplitFasta:
 	shell:
 		"""
 		mkdir -p {output.splitdir}
-		python {scriptdir}/FastaSplit.py -f {input.krakenffnall} -s 5000 -o {output.splitdir}
+		python {scriptdir}/FastaSplit.py -f {input.krakenffnall} -s 30000 -o {output.splitdir}
 		touch {output.splitdone}
 		"""
 
@@ -809,13 +808,21 @@ rule Hifiasm:
   			mkdir {output.dirname}
 		fi
 		if [ -s {input.finalreadfasta} ]; then
-			hifiasm -o {params.assemblyprefix} -t {threads} {input.finalreadfasta} -D 10 -l 1 -s 0.999 || true
-			if [ -s {output.gfa} ]; then
-				awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
-				faidx {output.fasta}
+			linecount=$(grep -c '>' < {input.finalreadfasta})
+			if [ $linecount -le 100000 ]; then
+				hifiasm -o {params.assemblyprefix} -t {threads} {input.finalreadfasta} -D 10 -l 1 -s 0.999 || true
+				if [ -s {output.gfa} ]; then
+					awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
+					faidx {output.fasta}
+				else
+					touch {output.fasta}
+					touch {output.fai}
+					touch {output.gfa} 
+				fi
 			else
 				touch {output.fasta}
 				touch {output.fai}
+				touch {output.gfa} 
 			fi 
 		else
 			touch {output.gfa} 
