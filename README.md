@@ -1,6 +1,35 @@
 # Marker-pipeline
 This repository contains a Snakemake pipeline which determines the species composition of the sample by SSU presence and seperates them accordingly. 
 
+## Visual pipeline overview
+
+```mermaid
+flowchart
+
+A[Genome] --> B(Scan for SSU)
+B --> C(Extract SSU)
+C --> D(Classify SSU)
+D --> E(Get families)
+E --> F(Download public genomes families)
+F --> H(Classify reads - kraken)
+G[Reads] --> H
+H --> I(Extract reads)
+E --> I
+I -->J(Map reads)
+I -->K(Independent assembly)
+A-->J
+J-->L(Busco)
+F-->M
+J-->M(Whole genome alignment)
+K-->O(Busco)
+F-->P
+K-->P(Whole genome alignment)
+M-->N(Report)
+L-->N(Report)
+O-->N(Report)
+P-->N(Report)
+```
+
 ## Required input
 Please clone this directory
 1. snakefile
