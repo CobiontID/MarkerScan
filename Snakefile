@@ -26,17 +26,16 @@ rule all:
 		expand("{pwd}/kraken.report",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
-		expand("{pwd}/final_reads_target.fa.gz",pwd=config["workingdirectory"]),
 		expand("{pwd}/putative_reads_removal.fa",pwd=config["workingdirectory"]),
-		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"])
+		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"]),
 
 rule HMMscan_SSU:
 	"""
 	Run HMMscan with prokaryotic+viral HMM (RF00177+RF01959)
 	"""
 	output:
-		dom = "{workingdirectory}/{shortname}.ProkSSU.domout", 
-		log = "{workingdirectory}/{shortname}.HMMscan.log"
+		dom = temporary("{workingdirectory}/{shortname}.ProkSSU.domout"), 
+		log = temporary("{workingdirectory}/{shortname}.HMMscan.log")
 	threads: 10
 	conda: "envs/hmmer.yaml"
 	shell:
@@ -53,8 +52,8 @@ rule FetchHMMReads:
 	output:
 		readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
 		readsinfomicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readsinfo",
-		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
-		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
+		readslist = temporary("{workingdirectory}/{shortname}.ProkSSU.readslist"),
+		readslistmicro = temporary("{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist")
 	shell:
 		"""
 		python {scriptdir}/GetReadsSSU_nhmmscan.py -i {input.dom} | grep -v 'RF02542.afa' > {output.readsinfo} || true
@@ -73,11 +72,11 @@ rule Fetch16SLoci:
 		readsinfomicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readsinfo",
 		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
 	output:
-		fasta16S = "{workingdirectory}/{shortname}.ProkSSU.reads.fa",
-		fasta16SLoci = "{workingdirectory}/{shortname}.ProkSSU.fa",
+		fasta16S = temporary("{workingdirectory}/{shortname}.ProkSSU.reads.fa"),
+		fasta16SLoci = temporary("{workingdirectory}/{shortname}.ProkSSU.fa"),
 		fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
-		fasta16Smicro = "{workingdirectory}/{shortname}.ProkSSU.reads.microsporidia.fa",
-		fasta16SLocimicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.fa",
+		fasta16Smicro = temporary("{workingdirectory}/{shortname}.ProkSSU.reads.microsporidia.fa"),
+		fasta16SLocimicro = temporary("{workingdirectory}/{shortname}.ProkSSU.microsporidia.fa"),
 		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa"
 	log: "{workingdirectory}/{shortname}.cdhit.log"
 	conda:	"envs/cdhit.yaml"
@@ -102,7 +101,7 @@ rule DownloadSILVA:
 	Download latest release SILVA DB
 	"""
 	output:
-		donesilva = "{workingdirectory}/silva_download.done.txt"
+		donesilva = temporary("{workingdirectory}/silva_download.done.txt")
 	shell:
 		"""
 		var=$(curl -L https://ftp.arb-silva.de/current/ARB_files/ | grep 'SSURef_opt.arb.gz.md5' | cut -f2 -d '\"')
@@ -133,7 +132,7 @@ rule DownloadOrganelles:
 	input:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"])
 	output:
-		doneorganelles = "{workingdirectory}/organelles_download.done.txt"
+		doneorganelles = temporary("{workingdirectory}/organelles_download.done.txt")
 	conda:	"envs/cdhit.yaml"
 	shell:
 		"""
@@ -187,7 +186,7 @@ rule DownloadApicomplexa:
 	input:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"])
 	output:
-		done_api = "{workingdirectory}/apicomplexa_download.done.txt"
+		done_api = temporary("{workingdirectory}/apicomplexa_download.done.txt")
 	conda:	"envs/eutils.yaml"
 	shell:
 		"""
@@ -273,14 +272,14 @@ rule ClassifySSU:
 		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 		donesilva = "{workingdirectory}/silva_download.done.txt"
 	output:
-		SILVA_output_embl = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.embl.csv",
-		SILVA_output_silva = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.silva.csv",
-		SILVA_output_ltp = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.ltp.csv",
+		SILVA_output_embl = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.embl.csv"),
+		SILVA_output_silva = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.silva.csv"),
+		SILVA_output_ltp = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.ltp.csv"),
 		SILVA_output = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.csv",
 		SILVA_tax = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax",
 		blastout = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt",
 		blastgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.genus.txt",
-		aclist = "{workingdirectory}/{shortname}.ProkSSU.acari.list.txt",
+		aclist = temporary("{workingdirectory}/{shortname}.ProkSSU.acari.list.txt"),
 		fastaAcari = "{workingdirectory}/{shortname}.ProkSSU.acari.fa",
 		blastacari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.blast.txt",
 		blastgenusAcari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.genus.txt",
@@ -321,9 +320,9 @@ rule MapAllReads2Assembly:
 	input:
 		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
 	output:
-		paffile = "{workingdirectory}/AllReadsGenome.paf",
-		mapping = "{workingdirectory}/AllReadsGenome.ctgs",
-		reads = "{workingdirectory}/AllReadsGenome.reads"
+		paffile = temporary("{workingdirectory}/AllReadsGenome.paf"),
+		mapping = temporary("{workingdirectory}/AllReadsGenome.ctgs"),
+		reads = temporary("{workingdirectory}/AllReadsGenome.reads")
 	threads: 10
 	conda: "envs/minimap.yaml"
 	shell:
@@ -341,10 +340,7 @@ checkpoint GetGenera:
 	Get genera which were detected in SILVA DB 16 screen
 	"""
 	input:
-		#SILVA16Sgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.genus.txt"
 		SILVA16Sgenus = expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),
-		#screenfile = "{workingdirectory}/refseq202.screen",
-		#asminfo = expand("{datadir}/mash/assembly_summary_refseq.txt",datadir=config["datadir"]),
 		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 	output:
 		generadir = directory("{workingdirectory}/genera")
@@ -388,16 +384,11 @@ rule DownloadRefSeqGenus:
 		taxname = "{genus}"
 	conda: "envs/dataset.yaml"
 	output:
-		#novel_pwd = directory("{datadir}/genera/{genus}"),
-		#refseqlog = "{datadir}/genera/{genus}/{genus}.refseq.log",
-		#downloadlog = "{datadir}/genera/{genus}/{genus}.download.log",
-		#refseqdir = directory("{datadir}/genera/{genus}/{genus}.Refseq"),
-		#refseqdir_orig = temp("{datadir}/genera/{genus}/RefSeq.{genus}.zip"),
-		krakenffnall = "{workingdirectory}/genera/{genus}.kraken.tax.ffn",
-		orglist = "{workingdirectory}/genera/{genus}.organelles.list",
-		orgfasta = "{workingdirectory}/genera/{genus}.organelles.ffn",
-		apifile = "{workingdirectory}/genera/{genus}.additional.ffn",
-		donefile = "{workingdirectory}/{genus}.refseqdownload.done.txt"
+		krakenffnall = temporary("{workingdirectory}/genera/{genus}.kraken.tax.ffn"),
+		orglist = temporary("{workingdirectory}/genera/{genus}.organelles.list"),
+		orgfasta = temporary("{workingdirectory}/genera/{genus}.organelles.ffn"),
+		apifile = temporary("{workingdirectory}/genera/{genus}.additional.ffn"),
+		donefile = temporary("{workingdirectory}/{genus}.refseqdownload.done.txt")
 	shell:
 		"""
 		if [ ! -d {datadir}/genera ]; then
@@ -461,7 +452,7 @@ rule concatenate_kraken_input:
 	input:
 		aggregate_kraken
 	output:
-		"{workingdirectory}/kraken.tax.ffn"
+		temporary("{workingdirectory}/kraken.tax.ffn")
 	shell:
 		"""
 		if [ -n "{input}" ]
@@ -509,8 +500,8 @@ checkpoint SplitFasta:
 	input:
 		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
 	output:
-		splitdir = directory("{workingdirectory}/split_fasta/"),
-		splitdone = "{workingdirectory}/split_fasta.done.txt"
+		splitdir = temporary(directory("{workingdirectory}/split_fasta/")),
+		splitdone = temporary("{workingdirectory}/split_fasta.done.txt")
 	shell:
 		"""
 		mkdir -p {output.splitdir}
@@ -525,7 +516,7 @@ rule doMasking:
 	input:
 		fastafile = "{workingdirectory}/split_fasta/kraken.tax.{num}.fa"
 	output:
-		maskedfile = "{workingdirectory}/split_fasta/kraken.tax.{num}.masked.fa"
+		maskedfile = temporary("{workingdirectory}/split_fasta/kraken.tax.{num}.masked.fa")
 	conda: "envs/kraken.yaml"
 	threads: 1
 	shell:
@@ -637,11 +628,11 @@ rule Map2Assembly:
 		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn",
 		krakenfa = "{workingdirectory}/{genus}/kraken.fa"
 	output:
-		paffile = "{workingdirectory}/{genus}/{genus}.paf",
+		paffile = temporary("{workingdirectory}/{genus}/{genus}.paf"),
 		mapping = "{workingdirectory}/{genus}/{genus}.ctgs",
-		contiglist = "{workingdirectory}/{genus}/{genus}.ctgs.list",
-		reads = "{workingdirectory}/{genus}/{genus}.reads",
-		fasta = "{workingdirectory}/{genus}/{genus}.ctgs.fa"
+		contiglist = temporary("{workingdirectory}/{genus}/{genus}.ctgs.list"),
+		reads = temporary("{workingdirectory}/{genus}/{genus}.reads"),
+		fasta = temporary("{workingdirectory}/{genus}/{genus}.ctgs.fa")
 	threads: 10
 	conda: "envs/minimap.yaml"
 	shell:
@@ -669,10 +660,10 @@ rule RunBusco:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	output:
-		buscodbs = "{workingdirectory}/{genus}/info_dbs.txt",
-		buscoini = "{workingdirectory}/{genus}/config_busco.ini",
+		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs.txt"),
+		buscoini = temporary("{workingdirectory}/{genus}/config_busco.ini"),
 		#proteins = "{workingdirectory}/{genus}/busco/busco/prodigal_output/predicted_genes/predicted.faa",
-		completed = "{workingdirectory}/{genus}/busco/done.txt"
+		completed = temporary("{workingdirectory}/{genus}/busco/done.txt")
 	conda: "envs/busco.yaml"
 	threads:
 		10
@@ -698,9 +689,9 @@ rule NucmerRefSeqContigs:
 		buscotable = "{workingdirectory}/{genus}/busco/done.txt",
 		refseqmasked = "{workingdirectory}/genera/{genus}.kraken.tax.ffn"
 	output:
-		completed = "{workingdirectory}/{genus}/nucmer_contigs.done.txt",
-		nucmerdelta = "{workingdirectory}/{genus}/{genus}_vs_contigs.delta",
-        nucmercoords = "{workingdirectory}/{genus}/{genus}_vs_contigs.coords.txt",
+		completed = temporary("{workingdirectory}/{genus}/nucmer_contigs.done.txt"),
+		nucmerdelta = temporary("{workingdirectory}/{genus}/{genus}_vs_contigs.delta"),
+        nucmercoords = temporary("{workingdirectory}/{genus}/{genus}_vs_contigs.coords.txt"),
 		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_contigs.overview.txt"
 	conda: "envs/nucmer.yaml"
 	shell:
@@ -732,13 +723,13 @@ rule ClusterBusco:
 	output:
 		summary = "{workingdirectory}/{genus}/busco/completeness_per_contig.txt",
 		finalassembly = "{workingdirectory}/{genus}/{genus}.finalassembly.fa",
-		contigsid = "{workingdirectory}/{genus}/{genus}.ids.txt",
-		readids = "{workingdirectory}/{genus}/{genus}.readsids.txt",
+		contigsid = temporary("{workingdirectory}/{genus}/{genus}.ids.txt"),
+		readids = temporary("{workingdirectory}/{genus}/{genus}.readsids.txt"),
 		finalreads = "{workingdirectory}/{genus}/{genus}.final_reads.fa",
-		nucmercontiglist = "{workingdirectory}/{genus}/{genus}.nucmer.contigs.txt",
-		buscocontiglist = "{workingdirectory}/{genus}/{genus}.busco.contigs.txt",
-		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads",
-		unmappedfa = "{workingdirectory}/{genus}/{genus}.unmapped.fa",
+		nucmercontiglist = temporary("{workingdirectory}/{genus}/{genus}.nucmer.contigs.txt"),
+		buscocontiglist = temporary("{workingdirectory}/{genus}/{genus}.busco.contigs.txt"),
+		unmapped = temporary("{workingdirectory}/{genus}/{genus}.unmapped.reads"),
+		unmappedfa = temporary("{workingdirectory}/{genus}/{genus}.unmapped.fa"),
 	conda: "envs/seqtk.yaml"
 	shell:
 		"""
@@ -782,9 +773,9 @@ rule AddMappingReads:
 		mapping = "{workingdirectory}/{genus}/{genus}.ctgs",
 		krakenfa = "{workingdirectory}/{genus}/kraken.reads"
 	output:
-		readslist = "{workingdirectory}/{genus}/{genus}.allreads",
-		finalreads = "{workingdirectory}/{genus}/{genus}.finalreads",
-		finalreadfasta = "{workingdirectory}/{genus}/{genus}.finalreads.fa"
+		readslist = temporary("{workingdirectory}/{genus}/{genus}.allreads"),
+		finalreads = temporary("{workingdirectory}/{genus}/{genus}.finalreads"),
+		finalreadfasta = "{workingdirectory}/{genus}/{genus}.reads2assemble.fa"
 	conda: "envs/seqtk.yaml"
 	shell:
 		"""
@@ -798,11 +789,11 @@ rule Hifiasm:
 	Run hifiasm assembly on kraken classfied reads
 	"""
 	input:
-		finalreadfasta = "{workingdirectory}/{genus}/{genus}.finalreads.fa"
+		finalreadfasta = "{workingdirectory}/{genus}/{genus}.reads2assemble.fa"
 	params:
 		assemblyprefix = "{workingdirectory}/{genus}/hifiasm/hifiasm"
 	output:
-		completed = "{workingdirectory}/{genus}/assembly.done.txt",
+		completed = temporary("{workingdirectory}/{genus}/assembly.done.txt"),
 		dirname = directory("{workingdirectory}/{genus}/hifiasm"),
 		gfa = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.gfa",
 		fasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
@@ -851,9 +842,9 @@ rule RunBuscoAssembly:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	output:
-		buscodbs = "{workingdirectory}/{genus}/info_dbs_assembly.txt",
-		buscoini = "{workingdirectory}/{genus}/config_busco_assembly.ini",
-		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
+		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_assembly.txt"),
+		buscoini = temporary("{workingdirectory}/{genus}/config_busco_assembly.ini"),
+		completed = temporary("{workingdirectory}/{genus}/buscoAssembly/done.txt"),
 	conda: "envs/busco.yaml"
 	threads:
 		10
@@ -879,9 +870,9 @@ rule NucmerRefSeqHifiasm:
 		buscotable = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
 		refseqmasked = "{workingdirectory}/genera/{genus}.kraken.tax.ffn"
 	output:
-		completed = "{workingdirectory}/{genus}/nucmer_hifiasm.done.txt",
-		nucmerdelta = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.delta",
-        nucmercoords = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.coords.txt",
+		completed = temporary("{workingdirectory}/{genus}/nucmer_hifiasm.done.txt"),
+		nucmerdelta = temporary("{workingdirectory}/{genus}/{genus}_vs_hifiasm.delta"),
+        nucmercoords = temporary("{workingdirectory}/{genus}/{genus}_vs_hifiasm.coords.txt"),
 		nucmercontigs = "{workingdirectory}/{genus}/{genus}_vs_hifiasm.overview.txt"
 	conda: "envs/nucmer.yaml"
 	shell:
@@ -900,7 +891,7 @@ rule NucmerRefSeqHifiasm:
 
 rule Map2AssemblyHifiasm:
 	input:
-		krakenfa = "{workingdirectory}/{genus}/{genus}.finalreads.fa",
+		krakenfa = "{workingdirectory}/{genus}/{genus}.reads2assemble.fa",
 		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt",
 		unmapped = "{workingdirectory}/{genus}/{genus}.unmapped.reads",
@@ -908,17 +899,17 @@ rule Map2AssemblyHifiasm:
 		readfile = "{workingdirectory}/{genus}/buscoReads.txt"
 	output:
 		summary = "{workingdirectory}/{genus}/buscoAssembly/completeness_per_contig.txt",
-		buscocontiglist = "{workingdirectory}/{genus}/{genus}.buscoAssembly.contigs.txt",
-		nucmercontiglist = "{workingdirectory}/{genus}/{genus}.NucmerAssembly.contigs.txt",
-		contiglist = "{workingdirectory}/{genus}/{genus}.Assembly.contigs.txt",
-		paffile = "{workingdirectory}/{genus}/{genus}.assembly.paf",
-		fasta = "{workingdirectory}/{genus}/{genus}.assembly.fa",
-		mapping = "{workingdirectory}/{genus}/{genus}.assembly.ctgs",
-		reads = "{workingdirectory}/{genus}/{genus}.assembly.reads",
-		reads_unmapped = "{workingdirectory}/{genus}/{genus}.assembly.unmapped.reads",
+		buscocontiglist = temporary("{workingdirectory}/{genus}/{genus}.buscoAssembly.contigs.txt"),
+		nucmercontiglist = temporary("{workingdirectory}/{genus}/{genus}.NucmerAssembly.contigs.txt"),
+		contiglist = temporary("{workingdirectory}/{genus}/{genus}.Assembly.contigs.txt"),
+		paffile = temporary("{workingdirectory}/{genus}/{genus}.assembly.paf"),
+		fasta = "{workingdirectory}/{genus}/{genus}.putative_assembly.fa",
+		mapping = temporary("{workingdirectory}/{genus}/{genus}.assembly.ctgs"),
+		reads = temporary("{workingdirectory}/{genus}/{genus}.assembly.reads"),
+		reads_unmapped = temporary("{workingdirectory}/{genus}/{genus}.assembly.unmapped.reads"),
 		readsfasta = "{workingdirectory}/{genus}/{genus}.putative_reads.fa",
-		busco_assembly = "{workingdirectory}/{genus}/buscoReadsAssembly.txt",
-		busco_assembly_hifi = "{workingdirectory}/{genus}/buscoReadsAssemblyHifi.txt"
+		busco_assembly = temporary("{workingdirectory}/{genus}/buscoReadsAssembly.txt"),
+		busco_assembly_hifi = temporary("{workingdirectory}/{genus}/buscoReadsAssemblyHifi.txt")
 	threads: 10
 	conda: "envs/minimap.yaml"
 	shell:
@@ -946,7 +937,7 @@ rule RunBuscoReads:
 	Detect number of BUSCO genes per contig
 	"""
 	input:
-		circgenome = "{workingdirectory}/{genus}/{genus}.finalreads.fa",
+		circgenome = "{workingdirectory}/{genus}/{genus}.reads2assemble.fa",
 		donetaxon = "{workingdirectory}/taxdownload.done.txt"
 	params:
 		buscodir = directory("{workingdirectory}/{genus}/buscoReads"),
@@ -955,12 +946,12 @@ rule RunBuscoReads:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	output:
-		renamedfa = "{workingdirectory}/{genus}/kraken.renamed.fa",
-		convtable = "{workingdirectory}/{genus}/kraken.convtable.txt",
-		buscodbs = "{workingdirectory}/{genus}/info_dbs_reads.txt",
-		buscoini = "{workingdirectory}/{genus}/config_busco_reads.ini",
-		completed = "{workingdirectory}/{genus}/buscoReads/done.txt",
-		readfile = "{workingdirectory}/{genus}/buscoReads.txt"
+		renamedfa = temporary("{workingdirectory}/{genus}/kraken.renamed.fa"),
+		convtable = temporary("{workingdirectory}/{genus}/kraken.convtable.txt"),
+		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_reads.txt"),
+		buscoini = temporary("{workingdirectory}/{genus}/config_busco_reads.ini"),
+		completed = temporary("{workingdirectory}/{genus}/buscoReads/done.txt"),
+		readfile = temporary("{workingdirectory}/{genus}/buscoReads.txt")
 	conda: "envs/busco.yaml"
 	threads:
 		10
@@ -999,9 +990,9 @@ rule DrawCircos:
 	params:
 		dirname = "{workingdirectory}/{genus}/"
 	output:
-		karyo = "{workingdirectory}/{genus}/circos.karyo",
-		cdsfile = "{workingdirectory}/{genus}/busco.cds.dat",
-		linkfile = "{workingdirectory}/{genus}/links.dat",
+		karyo = temporary("{workingdirectory}/{genus}/circos.karyo"),
+		cdsfile = temporary("{workingdirectory}/{genus}/busco.cds.dat"),
+		linkfile = temporary("{workingdirectory}/{genus}/links.dat"),
 		conffile = "{workingdirectory}/{genus}/circos.conf",
 		figure = "{workingdirectory}/{genus}/circos.png"
 	conda: "envs/circos.yaml"
@@ -1123,7 +1114,7 @@ rule concatenate_figures:
 	input:
 		aggregate_figures
 	output:
-		"{workingdirectory}/figures_done.txt"
+		temporary("{workingdirectory}/figures_done.txt")
 	shell:
 		"touch {output}"
 
