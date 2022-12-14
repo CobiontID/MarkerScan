@@ -183,10 +183,15 @@ for line in k:
         sciname=line.split(';')[-3]
     if sciname == 'uncultured':
         sciname=line.split(';')[-3]
+    if sciname == 'endosymbionts':
+        sciname=line.split(';')[-3]
     if 'Hafnia-Obesumbacterium' in sciname:
         sciname=sciname.split('-')[0]
     if 'Escherichia-Shigella' in sciname:
         sciname=sciname.split('-')[0]
+    if sciname not in namestax and sciname != 'Unclassified' and sciname != 'Chloroplast' and sciname != 'Mitochondrion':
+        sciname=line.split(';')[-3]
+        print('NOW: '+sciname)
     print(sciname)
     if sciname in namestax:
         #print(sciname)
@@ -237,12 +242,6 @@ for line in k:
             if genome_summary.assemblies is not None:
                 for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
                     i=i+1
-            #with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
-            #    distros_dict = json.load(f)
-            #    if distros_dict:
-            #        i=0
-            #        for distro in distros_dict["datasets"]:
-            #            i=i+1
             if i > 0:
                 foundlevel = True
             #f.close()
@@ -295,12 +294,6 @@ for line in k:
                 if genome_summary.assemblies is not None:
                     for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
                         i=i+1
-                #with open(str(args.outdir)+"/log."+str(taxlevelname)+".json", 'r') as f:
-                #    distros_dict = json.load(f)
-                #    if distros_dict:
-                #        i=0
-                #        for distro in distros_dict["datasets"]:
-                #            i=i+1
                 if i > 0:
                     foundlevel = True
                 #f.close()
@@ -337,7 +330,9 @@ for line in k:
                                 for assembly in map(lambda d: d.assembly, genome_summary.assemblies):
                                     i=i+1
                                     if i > 0:
-                                        prokgens.append(taxlevelname)    
+                                        prokgens.append(taxlevelname)
+    else:
+        print('NOT FOUND:'+sciname+'\t'+line) 
 
 file1=args.outdir+"/prok."+args.suffix
 k=open(file1,'w')
@@ -350,17 +345,3 @@ k=open(file1,'w')
 for elem in eukgens:
     k.write(elem+'\n')
 k.close()
-'''
-allchildren=[]
-k=open(args.tax,'r')
-for line in k:
-    sciname=line.split()[0]
-    #print(sciname)
-    descendants=getTaxChildren(taxparents,taxtypes,namestax[sciname],args.type)
-    allchildren.extend(descendants)
-set_allchildren = set(allchildren)
-uniqchildren=list(set_allchildren)
-
-for child in uniqchildren:
-    print(taxnames[child])
-'''
