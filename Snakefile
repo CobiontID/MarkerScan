@@ -1039,35 +1039,6 @@ rule concatenate_reads:
 		fi
 		"""
 
-'''
-def aggregate_readsetslist(wildcards):
-	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
-	return expand ("{workingdirectory}/{genus}/{genus}.readsids.txt", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
-
-rule concatenate_readlist:
-	input:
-		aggregate_readsetslist
-	output:
-		cont = "{workingdirectory}/final_reads_removal.txt",
-		target = "{workingdirectory}/final_reads_target.fa.gz"
-	shell:
-		"""
-		if [ -n "{input}" ]
-		then
-			cat {input} > {output.cont}
-			if [[ {reads} == *gz ]] 
-			then
-				zcat {reads} | paste - - - - | grep -v -F -f {output.cont} | tr "\t" "\n" | gzip > {output.target}
-			else
-				cat {reads} | grep -v -F -f {output.cont} | gzip > {output.target}
-			fi
-		else
-			touch {output.cont}
-			cp {reads} {output.target}
-		fi
-		"""
-'''
-
 def aggregate_readsets_putative(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
 	return expand ("{workingdirectory}/{genus}/{genus}.putative_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
