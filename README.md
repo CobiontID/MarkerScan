@@ -1,7 +1,7 @@
 # Marker-pipeline
 This repository contains a Snakemake pipeline which determines the species composition of the sample by SSU presence and seperates them accordingly. 
 
-## Visual pipeline overview
+## Visual overview of MarkerScan pipeline
 
 ```mermaid
 flowchart
