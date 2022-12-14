@@ -11,6 +11,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-o", type=str, action='store', dest='out',help='define report file')
 parser.add_argument("-r", type=str, action='store', dest='rep', help='define removed reads list')
 parser.add_argument("-d", type=str, action='store', dest='datadir', help='define data dir')
+parser.add_argument("-t", type=str, action='store', dest='table', help='define table file')
+parser.add_argument("-l", type=str, action='store', dest='list', help='define ssu read list file')
+parser.add_argument("-lm", type=str, action='store', dest='listmicro', help='define microsporidia ssu read list file')
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 args = parser.parse_args()
 
@@ -47,18 +50,18 @@ wd=os.path.dirname(args.rep)
 shortname=args.out.split('.report.pdf')[0].split('/')[-1]
 totallines=0
 ctgstotal=[]
-for filename in glob.glob(wd+'/*ProkSSU.readslist'):
-    num_lines = sum(1 for line in open(filename))
-    totallines=totallines+num_lines
-    ctgs = list(open(filename, 'r'))
-    ctgstotal.extend(ctgs)
+filename= args.list
+num_lines = sum(1 for line in open(filename))
+totallines=totallines+num_lines
+ctgs = list(open(filename, 'r'))
+ctgstotal.extend(ctgs)
 
-for filename in glob.glob(wd+'/*ProkSSU.microsporidia.readslist'):
-    for line in open(filename):
-        ctg=line.strip().split(':')[0]
-        if ctg not in ctgstotal:
-            ctgstotal.append(ctg)
-            totallines=totallines+1
+filenam=args.listmicro
+for line in open(filename):
+    ctg=line.strip().split(':')[0]
+    if ctg not in ctgstotal:
+        ctgstotal.append(ctg)
+        totallines=totallines+1
 
 pdf.set_font("Arial", "B", size=12)
 #o.write(shortname+'\n')
@@ -147,7 +150,7 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     pdf.cell(200, 6, txt="There are "+str(num_lines)+" reads ("+str(percentage)+"%) classified by Kraken as "+genusname+"." , ln=1, align="L")
     reportdict['Families'][genusname]['ClassifiedReads']=num_lines
     reportdict['Families'][genusname]['ClassifiedReadsPercentage']=percentage
-    readfile=wd+'/'+genusname+'/'+genusname+".finalreads.fa"
+    readfile=wd+'/'+genusname+'/'+genusname+".reads2assemble.fa"
     counter=0
     k=open(readfile,'r')
     for line in k:
@@ -200,8 +203,14 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     l.close()
     pdf.cell(200, 6,ln=1, align="L")
 
-    readids=wd+'/'+genusname+'/'+genusname+'.readsids.txt'
-    num_lines_reads = sum(1 for line in open(readids))
+    readids=wd+'/'+genusname+'/'+genusname+'.final_reads.fa'
+    num_lines_reads=0
+    k=open(readids,'r')
+    for line in k:
+        line=line.strip()
+        if line.startswith('>'):
+            num_lines_reads=num_lines_reads+1
+    k.close()
     fastafile = wd + '/' + genusname + '/' +genusname+'.finalassembly.fa'
     num_contigs=0
     totallen=0
@@ -235,12 +244,13 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     pdf.set_font("Arial", "U", size=10)
     pdf.cell(200, 6, txt="Hifiasm assembly", ln=1, align="L")
     pdf.set_font("Arial", size=10)
-    buscocontigs_asm= wd + '/' + genusname + '/' + genusname + '.Assembly.contigs.txt'
+    buscocontigs_asm= wd + '/' + genusname + '/' + genusname + '.putative_assembly.fa'
     buscocontigs=[]
     l=open(buscocontigs_asm,'r')
     for line in l:
         line=line.strip()
-        buscocontigs.append(line)
+        if line.startswith('>'):
+            buscocontigs.append(line.split('>')[1])
     l.close()
     assemblyfile = wd + '/' + genusname + '/hifiasm/hifiasm.p_ctg.fasta.fai'
     print(assemblyfile)
@@ -275,10 +285,18 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
                 pdf.cell(200, 6, txt=line, ln=1, align="L")
                 reportdict['Families'][genusname]['Busco_Re-Assembly']=line
         k.close()
-    putreadids=wd+'/'+genusname+'/'+genusname+'.assembly.unmapped.reads'
-    num_lines_put = sum(1 for line in open(putreadids))
-    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" additional reads which are classified as putative contamination", ln=1, align="L") 
-    pdf.cell(200, 6, txt="mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes and/or mapping to refseq genomes.", ln=1, align="L")    #
+
+    putreadids=wd+'/'+genusname+'/'+genusname+'.putative_reads.fa'
+    num_lines_put=0
+    k=open(putreadids,'r')
+    for line in k:
+        line=line.strip()
+        if line.startswith('>'):
+            num_lines_put=num_lines_put+1
+    k.close()
+    pdf.cell(200, 6, txt="There are "+str(num_lines_put)+" reads mapping to the full length of "+str(len(buscocontigs))+" contigs ("+b_mblen+") containing BUSCO genes " , ln=1, align="L")
+    pdf.cell(200, 6, txt="and/or mapping to refseq genomes." , ln=1, align="L")
+
     reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Contigs']=len(buscocontigs)
     reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_ContigLength']=b_mblen
     reportdict['Families'][genusname]['BuscoNucmer_Re-Assembly_Reads']=num_lines_put

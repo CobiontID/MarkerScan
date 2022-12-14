@@ -34,7 +34,7 @@ rule HMMscan_SSU:
 	Run HMMscan with prokaryotic+viral HMM (RF00177+RF01959)
 	"""
 	output:
-		dom = temporary("{workingdirectory}/{shortname}.ProkSSU.domout"), 
+		dom = temporary("{workingdirectory}/{shortname}.ProkSSU.domout"),
 		log = temporary("{workingdirectory}/{shortname}.HMMscan.log")
 	threads: 10
 	conda: "envs/hmmer.yaml"
@@ -1075,7 +1075,9 @@ rule create_report:
 		finalrem = "{workingdirectory}/final_reads_removal.fa",
 		krakenout = "{workingdirectory}/kraken.output",
 		putrem = "{workingdirectory}/putative_reads_removal.fa",
-		figs = "{workingdirectory}/figures_done.txt"
+		figs = "{workingdirectory}/figures_done.txt",
+		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
+		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
 	params:
 		datadir = expand("{datadir}/genera/",datadir=config["datadir"])
 	output:
@@ -1083,6 +1085,6 @@ rule create_report:
 	conda: "envs/fpdf.yaml"
 	shell:
 		"""
-		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem} -d {params.datadir}
+		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem} -d {params.datadir} -l {input.readslist} -lm {input.readslistmicro}
 		gzip {input.krakenout}
 		"""
