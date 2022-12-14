@@ -10,13 +10,13 @@ Basic usage:
 scriptdir = config["scriptdir"]
 reads = config["reads"]
 datadir = config["datadir"]
-#envsdir = config["envsdir"]
 sciname_goi = config["sci_name"]
 SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
 microsporidiadb = config["microsporidiadb"]
 acaridb = config["acaridb"]
 full=config["full"]
+pwd=config["workingdirectory"]
 
 rule all:
 	input:
@@ -140,9 +140,9 @@ rule DownloadOrganelles:
   			mkdir {datadir}/organelles
 		fi
 		if [ -s {datadir}/organelles/organelles.lineage.txt ]; then
-        	before=$(date -d 'today - 30 days' +%s)
-        	timestamp=$(stat -c %y {datadir}/organelles/organelles.lineage.txt | cut -f1 -d ' ')
-        	timestampdate=$(date -d $timestamp +%s)
+			before=$(date -d 'today - 180 days' +%s)
+			timestamp=$(stat -c %y {datadir}/organelles/organelles.lineage.txt | cut -f1 -d ' ')
+			timestampdate=$(date -d $timestamp +%s)
         	if [ $before -ge $timestampdate ]; then
                 rm {datadir}/organelles/*
 				mt=$(curl -L https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ | grep -E 'genomic.gbff|genomic.fna' | cut -f2 -d '\"')
@@ -194,7 +194,7 @@ rule DownloadApicomplexa:
   			mkdir {datadir}/apicomplexa
 		fi
 		if [ -s {datadir}/apicomplexa/apicomplexa.lineage.ffn ]; then
-        	before=$(date -d 'today - 30 days' +%s)
+        	before=$(date -d 'today - 180 days' +%s)
         	timestamp=$(stat -c %y {datadir}/apicomplexa/apicomplexa.lineage.ffn | cut -f1 -d ' ')
         	timestampdate=$(date -d $timestamp +%s)
         	if [ $before -ge $timestampdate ]; then
@@ -218,46 +218,27 @@ rule DownloadNCBITaxonomy:
 	input:
 		taxdir = expand("{datadir}/taxonomy/",datadir=config["datadir"]),
 	output:
-		#taxnames = "{datadir}/taxonomy/names.dmp",
-		#taxnodes = "{datadir}/taxonomy/nodes.dmp",
-		#accessionfile = "{datadir}/taxonomy/nucl_gb.accession2taxid",
-		donefile = "{workingdirectory}/taxdownload.done.txt"
+		donefile = temporary("{workingdirectory}/taxdownload.done.txt")
 	shell:
 		"""
-		today=$(date +%d-%m-%Y)
-		if [ ! -f {datadir}/taxonomy/date.$today.txt ]; then
-			if [ -f {datadir}/taxonomy/date.*txt ]; then
-				rm {datadir}/taxonomy/date.*txt
-			fi
-			touch {datadir}/taxonomy/date.$today.txt
-			curl -R ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz.md5 --output {input.taxdir}/taxdump.tar.gz.md5
-			if [ -f {input.taxdir}/names.dmp ]; then
-				if [ {input.taxdir}/taxdump.tar.gz.md5 -nt {input.taxdir}/names.dmp ]; then
-					curl -R ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz --output taxdump.tar.gz
-					tar -C {input.taxdir} -xzf taxdump.tar.gz names.dmp nodes.dmp
-					rm taxdump.tar.gz
-				fi
-			else
-				curl -R ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz --output taxdump.tar.gz
-				tar -C {input.taxdir} -xzf taxdump.tar.gz names.dmp nodes.dmp
-				rm taxdump.tar.gz
-			fi
-			curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz.md5 --output {input.taxdir}/nucl_gb.accession2taxid.gz.md5
-			if [ -f {input.taxdir}/nucl_gb.accession2taxid ]; then
-				if [ {input.taxdir}/nucl_gb.accession2taxid.gz.md5 -nt {input.taxdir}/nucl_gb.accession2taxid ]; then
-					curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz --output nucl_gb.accession2taxid.gz
-					curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz --output nucl_wgs.accession2taxid.gz
-					gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/nucl_gb.accession2taxid
-					gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/nucl_wgs.accession2taxid
-					rm nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz
-				fi
-			else
-				curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz --output nucl_gb.accession2taxid.gz
-				curl -R ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz --output nucl_wgs.accession2taxid.gz
-				gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/nucl_gb.accession2taxid
-				gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/nucl_wgs.accession2taxid
-				rm nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz			
-			fi
+		if [ ! -d {datadir}/taxonomy ]; then
+			mkdir {datadir}/taxonomy
+		fi
+		if [ -s {datadir}/taxonomy/names.dmp ]; then
+			before=$(date -d 'today - 180 days' +%s)
+			timestamp=$(stat -c %y {datadir}/taxonomy/names.dmp | cut -f1 -d ' ')
+			timestampdate=$(date -d $timestamp +%s)
+		fi
+        if [ ! -s {datadir}/taxonomy/names.dmp ] || [ $before -ge $timestampdate ]; then
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz.md5 --output {input.taxdir}/taxdump.tar.gz.md5
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz --output taxdump.tar.gz
+			tar -C {input.taxdir} -xzf taxdump.tar.gz names.dmp nodes.dmp
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz.md5 --output {input.taxdir}/nucl_gb.accession2taxid.gz.md5
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz --output nucl_gb.accession2taxid.gz
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz --output nucl_wgs.accession2taxid.gz
+			gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/nucl_gb.accession2taxid
+			gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/nucl_wgs.accession2taxid
+			rm nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz taxdump.tar.gz
 		fi
 		touch {output.donefile}
 		"""
