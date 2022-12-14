@@ -643,7 +643,7 @@ rule RunBusco:
 	output:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco.ini"),
-		#proteins = "{workingdirectory}/{genus}/busco/busco/prodigal_output/predicted_genes/predicted.faa",
+		table = "{workingdirectory}/{genus}/busco/full_table.tsv",
 		completed = temporary("{workingdirectory}/{genus}/busco/done.txt")
 	conda: "envs/busco.yaml"
 	threads:
@@ -654,6 +654,8 @@ rule RunBusco:
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f || true
+			mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+			rm -r {params.buscodir}/busco/
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
@@ -825,6 +827,7 @@ rule RunBuscoAssembly:
 	output:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_assembly.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco_assembly.ini"),
+		table = "{workingdirectory}/{genus}/buscoAssembly/full_table.tsv",
 		completed = temporary("{workingdirectory}/{genus}/buscoAssembly/done.txt"),
 	conda: "envs/busco.yaml"
 	threads:
@@ -835,6 +838,8 @@ rule RunBuscoAssembly:
 			busco --list-datasets > {output.buscodbs}
 			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f || true
+			mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+			rm -r {params.buscodir}/busco/
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
@@ -931,6 +936,7 @@ rule RunBuscoReads:
 		convtable = temporary("{workingdirectory}/{genus}/kraken.convtable.txt"),
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_reads.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco_reads.ini"),
+		table = "{workingdirectory}/{genus}/buscoReads/full_table.tsv",
 		completed = temporary("{workingdirectory}/{genus}/buscoReads/done.txt"),
 		readfile = temporary("{workingdirectory}/{genus}/buscoReads.txt")
 	conda: "envs/busco.yaml"
@@ -945,6 +951,8 @@ rule RunBuscoReads:
 				busco --list-datasets > {output.buscodbs}
 				python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 				busco --config {output.buscoini} -f || true
+				mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+				rm -r {params.buscodir}/busco/
 				touch {output.completed}
 				python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
 			else

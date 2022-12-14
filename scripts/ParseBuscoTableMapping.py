@@ -16,7 +16,7 @@ total_genes=[]
 contig_info={}
 busco_contig={}
 dirname=args.dir.split('/done.txt')[0]+'/busco'
-for filename in glob.glob(dirname+'/run_*/full_table.tsv'):
+for filename in glob.glob(dirname+'/full_table.tsv'):
     k=open(filename,'r')
     for line in k:
         if not line.startswith('#'):
