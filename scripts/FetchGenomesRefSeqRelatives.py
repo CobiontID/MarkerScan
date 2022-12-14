@@ -81,7 +81,7 @@ if args.tax in namestax:
         print(str(parent)+'\t'+parentname+'\t'+parentname_combi+'\t'+args.tax)
         # fetch data from NCBI via 'datasets' of all species from that clade
         if args.refs == 'yes':
-            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(parent),filters_assembly_source='refseq',page_size=5000)
+            genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(parent),filters_reference_only=True,page_size=5000)
         else:
             genome_summary = api_instance.assembly_descriptors_by_taxon(taxon=str(parent),page_size=5000)
         i=0
