@@ -6,3 +6,4 @@ dependencies:
   - boost-cpp
   - sina=1.7.0
   - blast
+  - tbb=2020.2
