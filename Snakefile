@@ -454,7 +454,7 @@ rule DownloadGenusRel:
 	output:
 		novel_pwd = directory("{workingdirectory}/relatives/"),
 		refseqlog = "{workingdirectory}/relatives/relatives.refseq.log",
-		refseqdir = directory("{workingdirectory}/relatives/relatives.Refseq"),
+		refseqdir = temporary(directory("{workingdirectory}/relatives/relatives.Refseq")),
 		krakenffnrel = "{workingdirectory}/relatives/relatives.kraken.tax.ffn"
 	params:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
@@ -552,6 +552,7 @@ rule CreateKrakenDB:
 		else
 			mkdir {output.krakendb}
 		fi
+		gzip {input.krakenffnrel}
 		rm -r {input.splitdir}
 		rm {input.krakenfasta}
 		"""
