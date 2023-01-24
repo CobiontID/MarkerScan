@@ -15,7 +15,7 @@ args = parser.parse_args()
 total_genes=[]
 contig_info={}
 busco_contig={}
-dirname=args.dir.split('/done.txt')[0]+'/busco'
+dirname=args.dir.split('/done.txt')[0]
 for filename in glob.glob(dirname+'/full_table.tsv'):
     k=open(filename,'r')
     for line in k:

@@ -660,6 +660,7 @@ rule RunBusco:
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
+			touch {output.table}
 		fi
 		touch {output.completed}
 		"""
@@ -844,6 +845,7 @@ rule RunBuscoAssembly:
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
+			touch {output.table}
 		fi
 		touch {output.completed}
 		"""
