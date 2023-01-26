@@ -1,5 +1,5 @@
 FROM ubuntu:22.04
-WORKDIR /Marker_pipeline
+WORKDIR /MarkerScan
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
          locales \
          libtbb2 \
@@ -9,4 +9,4 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/CobiontID/MarkerScan.git .
-RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-frontend conda --conda-create-envs-only -s src/create-envs.smk
+RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-frontend conda --conda-create-envs-only -s MarkerScan/src/create-envs.smk
