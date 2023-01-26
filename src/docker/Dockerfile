@@ -8,5 +8,5 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
          snakemake \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone git@github.com:CobiontID/MarkerScan.git .
+RUN git clone https://github.com/CobiontID/MarkerScan.git .
 RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-create-envs-only -s create-envs.smk
