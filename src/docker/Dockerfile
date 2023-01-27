@@ -9,7 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install miniconda
-1ENV CONDA_DIR /opt/conda
+ENV CONDA_DIR /opt/conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && /bin/bash ~/miniconda.sh -b -p /opt/conda
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
