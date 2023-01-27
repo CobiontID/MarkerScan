@@ -52,5 +52,5 @@ jobs:
         with:
           context: src/docker
           push: true
-          tags: markerscan:${{ env.VERSION }}, markerscan:latest
+          tags: emvcaest/markerscan:${{ env.VERSION }}, emvcaest/markerscan:latest
           labels: ${{ steps.meta.outputs.labels }}
