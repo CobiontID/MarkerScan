@@ -13,11 +13,11 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
 ENV CONDA_DIR /opt/conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && /bin/bash ~/miniconda.sh -b -p /opt/conda
 
-# Install mamba
-RUN conda install -n base mamba
-
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
+
+# Install mamba
+RUN conda install -n base mamba
 
 RUN git clone https://github.com/CobiontID/MarkerScan.git /MarkerScanPipeline
 RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-create-envs-only -s /MarkerScanPipeline/create-envs.smk
