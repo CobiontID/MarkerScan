@@ -17,7 +17,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # Install mamba
-RUN conda install -n base mamba
+RUN conda install -n base -c conda-forge mamba
 
 RUN git clone https://github.com/CobiontID/MarkerScan.git /MarkerScanPipeline
 RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-create-envs-only -s /MarkerScanPipeline/create-envs.smk
