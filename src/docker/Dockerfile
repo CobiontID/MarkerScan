@@ -9,4 +9,4 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/CobiontID/MarkerScan.git /MarkerScanPipeline
-RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-frontend conda --conda-create-envs-only -s /MarkerScanPipeline/MarkerScan/src/docker/create-envs.smk
+RUN snakemake -p --cores 1 --use-conda --conda-prefix /opt/conda/ --conda-frontend conda --conda-create-envs-only -s /MarkerScanPipeline/create-envs.smk
