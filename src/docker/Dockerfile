@@ -7,6 +7,7 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
          wget \
          git \
          snakemake \
+         curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install miniconda
