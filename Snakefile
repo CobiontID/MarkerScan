@@ -7,14 +7,16 @@ Requirements
 Basic usage:
   snakemake -p --use-conda --conda-prefix condadir --configfile config.yaml
 """
-scriptdir = config["scriptdir"]
+
+scriptdir = workflow.basedir+"/scripts"
+SSUHMMfile = workflow.basedir+"/SSU_Prok_Euk_Microsporidia.hmm"
+microsporidiadb= workflow.basedir+"/MicrosporidiaSSU_NCBI"
+acaridb = workflow.basedir+"/AcariSSU_SILVA_pr2_curated"
+
 reads = config["reads"]
 datadir = config["datadir"]
 sciname_goi = config["sci_name"]
-SSUHMMfile = config["SSUHMMfile"]
 genome = config["genome"]
-microsporidiadb = config["microsporidiadb"]
-acaridb = config["acaridb"]
 full=config["full"]
 pwd=config["workingdirectory"]
 
@@ -286,7 +288,7 @@ rule ClassifySSU:
 			touch {output.blastout}
 			touch {output.blastgenus}
 		fi
-		if grep -Fq 'Acari' in {output.SILVA_tax}; then
+		if grep 'Acari' {output.SILVA_tax}; then
 			cat {output.SILVA_tax} | grep 'Acari' | cut -f1 | sort | uniq > {output.aclist}
 			python {scriptdir}/FetchSSUFasta.py -f {input.fasta16SLociReduced} -i {output.aclist} -o {output.fastaAcari}
 			blastn -db {acaridb} -query {output.fastaAcari} -out {output.blastacari} -outfmt 6
