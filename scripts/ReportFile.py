@@ -160,14 +160,14 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     k.close()
     if counter > 100000:
         reportdict['Families'][genusname]['Busco_ClassifiedReads']="Too many reads - NA "
-    for buscooutput in glob.glob(wd+'/'+genusname+'/buscoReads/busco/short_summary.specific.*.busco.txt'):
-        k=open(buscooutput,'r')
-        for line in k:
-            line=line.strip()
-            if line.startswith('C'):
-                reportdict['Families'][genusname]['Busco_ClassifiedReads']=line
-                pdf.cell(200, 6, txt=line, ln=1, align="L")
-        k.close()
+    buscooutput =  wd+'/'+genusname+'/buscoReads/summary.txt'
+    k=open(buscooutput,'r')
+    for line in k:
+        line=line.strip()
+        if line.startswith('C'):
+            reportdict['Families'][genusname]['Busco_ClassifiedReads']=line
+            pdf.cell(200, 6, txt=line, ln=1, align="L")
+    k.close()
     pdf.cell(200, 6,ln=1, align="L")
 
     completeness=wd+'/'+genusname+'/busco/completeness_per_contig.txt'
@@ -180,14 +180,14 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
         line=line.replace('\t',';')
         pdf.cell(200, 6, txt=line, ln=1, align="L")
     l.close()
-    for buscooutput in glob.glob(wd+'/'+genusname+'/busco/busco/short_summary.specific.*.busco.txt'):
-        k=open(buscooutput,'r')
-        for line in k:
-            line=line.strip()
-            if line.startswith('C'):
-                reportdict['Families'][genusname]['Busco_Assembly']=line
-                pdf.cell(200, 6, txt=line, ln=1, align="L")
-        k.close()
+    buscooutput =  wd+'/'+genusname+'/busco/summary.txt'
+    k=open(buscooutput,'r')
+    for line in k:
+        line=line.strip()
+        if line.startswith('C'):
+            reportdict['Families'][genusname]['Busco_Assembly']=line
+            pdf.cell(200, 6, txt=line, ln=1, align="L")
+    k.close()
     pdf.cell(200, 6,ln=1, align="L")
 
     pdf.set_font("Arial", "U", size=10)
@@ -277,14 +277,14 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     mblen="{:.2f}".format(float(totallen/1000000))+"Mb"
     b_mblen="{:.2f}".format(float(totallenbusco/1000000))+"Mb"
     pdf.cell(200, 6, txt="Hifiasm assembled "+str(num_contigs_hifiasm)+" contigs with an N50 of "+kblenN50+" and a total length of "+mblen+".", ln=1, align="L")
-    for buscooutput in glob.glob(wd+'/'+genusname+'/buscoAssembly/busco/short_summary.specific.*.busco.txt'):
-        k=open(buscooutput,'r')
-        for line in k:
-            line=line.strip()
-            if line.startswith('C'):
-                pdf.cell(200, 6, txt=line, ln=1, align="L")
-                reportdict['Families'][genusname]['Busco_Re-Assembly']=line
-        k.close()
+    buscooutput =  wd+'/'+genusname+'/buscoAssembly/summary.txt'
+    k=open(buscooutput,'r')
+    for line in k:
+        line=line.strip()
+        if line.startswith('C'):
+            pdf.cell(200, 6, txt=line, ln=1, align="L")
+            reportdict['Families'][genusname]['Busco_Re-Assembly']=line
+    k.close()
 
     putreadids=wd+'/'+genusname+'/'+genusname+'.putative_reads.fa'
     num_lines_put=0

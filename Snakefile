@@ -647,6 +647,7 @@ rule RunBusco:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco.ini"),
 		table = "{workingdirectory}/{genus}/busco/full_table.tsv",
+		summary = "{workingdirectory}/{genus}/busco/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/busco/done.txt")
 	conda: "envs/busco.yaml"
 	threads:
@@ -658,11 +659,13 @@ rule RunBusco:
 			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f || true
 			mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+			mv {params.buscodir}/busco/run*/short_summary.txt {output.summary}
 			rm -r {params.buscodir}/busco/
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
 			touch {output.table}
+			touch {output.summary}
 		fi
 		touch {output.completed}
 		"""
@@ -794,21 +797,15 @@ rule Hifiasm:
 		fi
 		if [ -s {input.finalreadfasta} ]; then
 			linecount=$(grep -c '>' < {input.finalreadfasta})
-			if [ $linecount -le 100000 ]; then
-				hifiasm -o {params.assemblyprefix} -t {threads} {input.finalreadfasta} -D 10 -l 1 -s 0.999 || true
-				if [ -s {output.gfa} ]; then
-					awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
-					faidx {output.fasta}
-				else
-					touch {output.fasta}
-					touch {output.fai}
-					touch {output.gfa} 
-				fi
+			hifiasm -o {params.assemblyprefix} -t {threads} {input.finalreadfasta} -D 10 -l 1 -s 0.999 || true
+			if [ -s {output.gfa} ]; then
+				awk '/^S/{{print ">"$2"\\n"$3}}' {output.gfa} | fold > {output.fasta} || true
+				faidx {output.fasta}
 			else
 				touch {output.fasta}
 				touch {output.fai}
 				touch {output.gfa} 
-			fi 
+			fi
 		else
 			touch {output.gfa} 
 			touch {output.fasta}
@@ -832,6 +829,7 @@ rule RunBuscoAssembly:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_assembly.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco_assembly.ini"),
 		table = "{workingdirectory}/{genus}/buscoAssembly/full_table.tsv",
+		summary = "{workingdirectory}/{genus}/busco/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/buscoAssembly/done.txt"),
 	conda: "envs/busco.yaml"
 	threads:
@@ -843,11 +841,13 @@ rule RunBuscoAssembly:
 			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {input.circgenome} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
 			busco --config {output.buscoini} -f || true
 			mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+			mv {params.buscodir}/busco/run*/short_summary.txt {output.summary}
 			rm -r {params.buscodir}/busco/
 		else
 			touch {output.buscodbs}
 			touch {output.buscoini}
 			touch {output.table}
+			touch {output.summary}
 		fi
 		touch {output.completed}
 		"""
@@ -942,6 +942,7 @@ rule RunBuscoReads:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_reads.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco_reads.ini"),
 		table = "{workingdirectory}/{genus}/buscoReads/full_table.tsv",
+		summary = "{workingdirectory}/{genus}/busco/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/buscoReads/done.txt"),
 		readfile = temporary("{workingdirectory}/{genus}/buscoReads.txt")
 	conda: "envs/busco.yaml"
@@ -951,24 +952,23 @@ rule RunBuscoReads:
 		"""
 		if [ -s {input.circgenome} ]; then
 			linecount=$(grep -c '>' < {input.circgenome})
-			if [ $linecount -le 100000 ]; then
-				python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
-				busco --list-datasets > {output.buscodbs}
-				python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
-				busco --config {output.buscoini} -f || true
-				mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
-				rm -r {params.buscodir}/busco/
-				touch {output.completed}
-				python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
-			else
-				touch {output.renamedfa} {output.convtable} {output.buscodbs} {output.buscoini} {output.readfile}
-			fi
+			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
+			busco --list-datasets > {output.buscodbs}
+			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+			busco --config {output.buscoini} -f || true
+			mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+			mv {params.buscodir}/busco/run*/short_summary.txt {output.summary}
+			rm -r {params.buscodir}/busco/
+			touch {output.completed}
+			python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
 		else 
 			touch {output.renamedfa}
 			touch {output.convtable}
 			touch {output.buscodbs}
 			touch {output.buscoini}
 			touch {output.readfile}
+			touch {output.table}
+			touch {output.summary}
 		fi
 		touch {output.completed}
 		"""
