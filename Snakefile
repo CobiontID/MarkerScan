@@ -829,7 +829,7 @@ rule RunBuscoAssembly:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_assembly.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco_assembly.ini"),
 		table = "{workingdirectory}/{genus}/buscoAssembly/full_table.tsv",
-		summary = "{workingdirectory}/{genus}/busco/summary.txt",
+		summary = "{workingdirectory}/{genus}/buscoAssembly/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/buscoAssembly/done.txt"),
 	conda: "envs/busco.yaml"
 	threads:
@@ -942,7 +942,7 @@ rule RunBuscoReads:
 		buscodbs = temporary("{workingdirectory}/{genus}/info_dbs_reads.txt"),
 		buscoini = temporary("{workingdirectory}/{genus}/config_busco_reads.ini"),
 		table = "{workingdirectory}/{genus}/buscoReads/full_table.tsv",
-		summary = "{workingdirectory}/{genus}/busco/summary.txt",
+		summary = "{workingdirectory}/{genus}/buscoReads/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/buscoReads/done.txt"),
 		readfile = temporary("{workingdirectory}/{genus}/buscoReads.txt")
 	conda: "envs/busco.yaml"
