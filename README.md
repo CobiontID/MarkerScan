@@ -93,45 +93,41 @@ P-->N(Report)
 
 ## Workflow details
 
-1. Run nhmmer with SSU_Prok_Euk_Microsporidia.hmm across the draft assembly
-2. Extract coordinates of matches: "{workingdirectory}/{shortname}.ProkSSU.readsinfo"
-3. Get SSU locus sequence: "{workingdirectory}/{shortname}.ProkSSU.fa" and collapse by 99% ID using cd-hit: "{workingdirectory}/{shortname}.ProkSSU.reduced.fa"
-4. Download SILVA DB if new version available on https://ftp.arb-silva.de/current/ARB_files/ into {datadir}/silva
-5. Classify SSU regions using SILVA. Taxonomy per sequence is found in "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax"
-6. Determine the species composition of sample and for which families the procedure continues, output in {workingdirectory}/genera
+### Download steps
+1. Download SILVA DB (https://ftp.arb-silva.de/current/ARB_files/) into {datadir}/silva (re-run, when new version)
+2. Download all refseq organellar sequences from https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ and https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ and store in {datadir}/organelles (re-run, when older than 180 days)
+3. Download all genbank organellar sequences for apicomplexans (common contaminant, but sequence information is rare) via e-utils and store in {datadir}/apicomplexa (re-run, when older than 180 days)
+4. Download NCBI taxonomy (both names.dmp / nodes.dmp and nucl_wgs.accession2taxid/nucl_gb.accession2taxid) (re-run, when older than 180 days)
 
-In the meantime some files are downloaded if necessary:
-1. Download all refseq organellar sequences from https://ftp.ncbi.nlm.nih.gov/refseq/release/mitochondrion/ and https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/ and store in {datadir}/organelles if files not exist or older than 30 days
-2. Download all genbank organellar sequences for apicomplexans (common contaminant, but sequence information is rare) via e-utils and store in {datadir}/apicomplexa if files not exist or older than 30 days
-3. Download NCBI taxonomy (both names.dmp/nodes.dmp and nucl_wgs.accession2taxid/nucl_gb.accession2taxid) if not latest version. Curl statement will download checksum file from ftp and compare download dates. Database is updated regularly, so downloading is often required.
-4. Download genomes for the closest relatives of the target species available. This step is not stored in {datadir} but in {workingdir}, so downloading will be performed for every sample. This step could be optimized if pipeline is going to be run for several closely related species (e.g. moths from same family). Next, this fasta file is split and masked using duskmasker. Outputfile: {workingdirectory}/kraken.relatives.masked.ffn.
+### Workflow steps
+1. Run nhmmer with SSU_Prok_Euk_Microsporidia.hmm across the assembly and coordinates of matches can be found in {shortname}.ProkSSU.readsinfo
+2. The SSU loci are extracted and collapsed with 99% nucleotide identity and stored in {shortname}.ProkSSU.reduced.fa
+3. Classify SSU regions using SILVA. Taxonomy per sequence is found in {shortname}.ProkSSU.reduced.SILVA.tax
+4. Determine the species composition of sample and for which families the procedure continues, output in {workingdirectory}/genera
+5. Download genomes for the closest relatives of the target species available. Next, this fasta file is split and masked using duskmasker. Outputfile: relatives/kraken.relatives.masked.ffn.
+6. Download all available genomes (refseq if bacterial, all if eukaryotic) for the detected families and store in {datadir}/genera (re-run, when older than 180 days).
+7. All fasta files of the detected cobiont families are combined in kraken.tax.masked.ffn.
+8. A custom kraken database consisting out of kraken.tax.masked.ffn and relatives/kraken.relatives.masked.ffn is created: krakendb/
+9. Kraken2 is run. Outputfiles are kraken.output and kraken.report
+10. All reads are mapped to the draft assembly: AllReadsGenome.paf
 
-The following part of the pipeline will be done very every detected family in the 'metagenomic' composition of the sample.
-1. Download all available genomes (refseq if bacterial, all if eukaryotic) for the detected families and store in {datadir}/genera if files not exist or older than 30 days. Copy over to {workingdirectory}/genera. 
 
-As these steps all write their output to a shared directory, running several samples simultaneously could cause problems. Downloading genomes using the NCBI datasets tool could with several queries at once has also proven to be unstable.
+The following part of the pipeline will be done very every detected family based on the composition of the sample.
 
-This is followed by these steps:
-1. All fasta files of the contaminant families are combined, split and masked using duskmasker. Now masking is done every time pipeline is run. This could be optimized if masking was already done when downloading. Result is in {workingdirectory}/kraken.tax.masked.ffn.
-2. A kraken database is created using the masked genomes of closely related species target and combined masked fasta file of family members contaminant. {workingdirectory}/krakendb
-3. Kraken2 is run. Outputfiles are {workingdirectory}/kraken.output, {workingdirectory}/kraken.report
-4. All reads are mapped to the draft assembly. {workingdirectory}/AllReadsGenome.paf
-
-The following part of the pipeline will be done very every detected family in the 'metagenomic' composition of the sample.
-1. Reads are extracted per bin. {workingdirectory}/{genus}/kraken.fa
-2. Kraken reads are mapped to draft assembly. Fully aligned contigs {workingdirectory}/{genus}/{genus}.ctgs and corresponding reads {workingdirectory}/{genus}/{genus}.reads
-3. Run Busco on these contigs. {workingdirectory}/{genus}/busco/busco
-4. Run Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn on these contigs. {workingdirectory}/{genus}/{genus}\_vs_contigs.overview.txt
-5. Combine these results and define certain set of reads to remove. {workingdirectory}/{genus}/{genus}.final_reads.fa --> concatenated across families in **{workingdirectory}/final_reads_removal.fa** and the remaining reads are in **{workingdirectory}/final_reads_target.fa.gz**.
+1. Reads are extracted per bin. {family}/kraken.fa
+2. Kraken reads are mapped to draft assembly. Fully aligned contigs {family}/{family}.ctgs
+3. Run Busco on these contigs: {family}/busco/
+4. Based on the downloaded genomes of this family, homology search using nucmer is performed on these contigs:{family}/{family}\_vs_contigs.overview.txt
+5. Combine these results and define certain set of reads which are deemed to belong to this {family}. {family}/{family}.final_reads.fa --> concatenated across families in final_reads_removal.fa and corresponding assembled sequence in final_assembly.fa.
 
 Moreover, also a re-assembly is done.
-1. Reads of draft contigs which are not fully aligned are added to the kraken reads
-2. Busco is run on the reads {workingdirectory}/{genus}/buscoReads/busco
-3. Assembly is done using hifiasm: {workingdirectory}/{genus}/hifiasm/
-4. Busco on re-assembled contigs: {workingdirectory}/{genus}/buscoAssembly
-5. Nucmer {workingdirectory}/genera/{genus}.kraken.tax.ffn against re-assembled contigs
-6. Map reads to re-assembled contigs: {workingdirectory}/{genus}/{genus}.putative_reads.fa --> concatenated across families in **{workingdirectory}/putative_reads_removal.fa**
+1. Reads of draft contigs which are not fully aligned are added to the kraken reads: {family}/{family}.reads2assemble.fa
+2. Assembly is done using hifiasm: {family}/hifiasm/
+3. Busco is run twice, both on the reads as on the novel assembly: {family}/buscoReads and {family}/buscoAssembly
+4. Nucmer against re-assembled contigs: {family}/{family}\_vs_hifiasm.overview.txt
+5. Map reads to re-assembled contigs: {family}/{family}.putative_reads.fa --> concatenated across families in putative_reads_removal.fa
 7. Draw circos plot
 
-Combine all results and generate report file **{workingdirectory}/{shortname}.report.pdf**
-This is an example report file: [ilAriAges1.v1.report.pdf](https://github.com/CobiontID/Marker_pipeline/files/6175523/ilAriAges1.v1.report.pdf)
+
+Combine all results and generate report file {shortname}.report.pdf and {shortname}.json.
+Click here for an example report file: [name link](link)
