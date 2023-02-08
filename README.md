@@ -1,5 +1,66 @@
-# Marker-pipeline
-This repository contains a Snakemake pipeline which determines the species composition of the sample by SSU presence and seperates them accordingly. 
+# MarkerScan Pipeline
+Pipeline to determine the species composition of your sample, and separate and assemble every component.
+
+1. [Installation](#installation)
+2. [Config file](#config-file)
+3. [Visual overview of MarkerScan pipeline](#visual-overview-of-markerscan-pipeline)
+4. [Workflow details](#workflow-details)
+
+## Installation
+
+### Singularity installation
+
+The prefered way of installation is via the provided singularity container as this will ensure there are no software incompatibilities. 
+After installation of singularity, you can pull a docker image of the latest version of the code and convert it into a singularity container:
+
+```
+singularity pull docker://emvcaest/markerscan:latest
+```
+
+Next you need to bind all required directories of your local machine (see [Config file](#config-file)) to the image
+
+```
+export SINGULARITY_BIND="$DIR"
+```
+
+The image can now be run as follows:
+
+```
+singularity run markerscan_latest.sif snakemake --cores $threads --use-conda --conda-prefix /opt/conda/ -s /MarkerScanPipeline/Snakefile --configfile $configfile
+```
+
+### From source
+
+Please clone this directory to your location of choice.
+
+```
+git clone https://github.com/CobiontID/MarkerScan.git
+```
+Download snakemake, e.g. via conda
+```
+conda install -c bioconda snakemake
+```
+
+```
+# activate the Conda environment
+conda activate snakemake
+snakemake --configfile $configfile --cores $threads --use-conda --conda-prefix $condaprefix -s $pipelinedir/Snakefile
+```
+
+
+## Config file
+
+To run the pipeline a yaml file containing all external parameters needs to be created, an example is shown below.
+
+```
+reads: zipped fasta read file
+genome: unzipped fasta file
+shortname: e.g. ilBlaLact1, this will be used in output file names
+sci_name: e.g. Blastobasis lacticolella, this name needs to be present in NCBI taxonomy with exact spelling 
+workingdirectory: folder to store all output files
+datadir: central folder to store output which can be re-used across multiple pipeline runs
+full: 0|1 (run only the SSU detection steps, or complete the full pipeline)
+```
 
 ## Visual overview of MarkerScan pipeline
 
@@ -30,57 +91,7 @@ O-->N(Report)
 P-->N(Report)
 ```
 
-## Required input
-Please clone this directory
-1. snakefile
-2. all scripts for the directory /scripts
-3. all yaml files containing information regarding external programs required to be downloaded by conda in /envs
-4. the hmmerprofile SSU_Prok_Euk_Microsporidia.hmm
-5. the NCBI datasets tool
-6. the microsporidia ssu db  
-
-to your location of choice.
-
-You also need to create a directory where to store db information that is commonly used while running different samples = datadir, contains the subdirectories: silva, busco_data, organelles, apicomplexa, taxonomy, genera.
-
-To run the pipeline a yaml file containing all external parameters needs to be created, an example is shown below.
-
-```
-reads: /lustre/scratch116/tol/projects/darwin/sub_projects/cobiont_detection/pipeline/hmm_pipeline/readfiles/ilBlaLact1fasta.gz
-genome: /lustre/scratch116/vr/projects/vgp/build/insects/ilBlaLact1/assemblies/hicanu.20200327/ilBlaLact1.unitigs.fasta
-shortname: ilBlaLact1 (dTOL acronym)
-sci_name: Blastobasis lacticolella 
-workingdirectory: $WORKINGDIR
-scriptdir: $SCRIPTDIR
-datadir: $DATADIR
-SSUHMMfile: $dir/SSU_Prok_Euk_Microsporidia.hmm
-microsporidiadb: $dir/MicrosporidiaSSU_NCBI
-acaridb: $dir/AcariSSU_SILVA_pr2_curated
-full: 1|0
-```
-
-## Script to launch the pipeline
-
-I typically run the pipeline by running on 10 cores and 25Gb memory:
-```
-bsub -o snakemake.output.%J -e snakemake.error.%J -n 10 -R"select[mem>25000] rusage[mem=25000]" -M25000 ./run_snakemake.sh $configfile
-```
-
-The run_snakemake.sh looks as follows:
-```
-# make sure conda activate is available in script
-eval "$(conda shell.bash hook)"
-
-# activate the Conda environment
-conda activate snakemake
-snakemake --configfile $1 --cores 10 --use-conda --conda-prefix $condaprefix
-```
-
-Snakemake will automatically decide which rules it can run and spread the tasks over the given cores. Nonetheless I have set that it has to use 10 threads for certain tasks (hmmscan, classification SINA, readmapping, create krakendb, kraken2, busco, hifiasm)
-
-## Overview of the pipeline
-
-For now very little intermediate files are removed. Once the pipeline is integrated, file removal will need to be optimized.
+## Workflow details
 
 1. Run nhmmer with SSU_Prok_Euk_Microsporidia.hmm across the draft assembly
 2. Extract coordinates of matches: "{workingdirectory}/{shortname}.ProkSSU.readsinfo"
