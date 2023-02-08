@@ -56,7 +56,7 @@ To run the pipeline a yaml file containing all external parameters needs to be c
 reads: zipped fasta read file
 genome: unzipped fasta file
 shortname: e.g. ilBlaLact1, this will be used in output file names
-sci_name: e.g. Blastobasis lacticolella, this name needs to be present in NCBI taxonomy with exact spelling 
+sci_name: e.g. Blastobasis lacticolella, this full scientific name name needs to be present in NCBI taxonomy with exact spelling 
 workingdirectory: folder to store all output files
 datadir: central folder to store output which can be re-used across multiple pipeline runs
 full: 0|1 (run only the SSU detection steps, or complete the full pipeline)
@@ -130,4 +130,3 @@ Moreover, also a re-assembly is done.
 
 
 Combine all results and generate report file {shortname}.report.pdf and {shortname}.json.
-Click here for an example report file: [name link](link)
