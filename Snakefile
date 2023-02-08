@@ -13,6 +13,8 @@ SSUHMMfile = workflow.basedir+"/SSU_Prok_Euk_Microsporidia.hmm"
 microsporidiadb= workflow.basedir+"/MicrosporidiaSSU_NCBI"
 acaridb = workflow.basedir+"/AcariSSU_SILVA_pr2_curated"
 
+threads_max = workflow.cores
+
 reads = config["reads"]
 datadir = config["datadir"]
 sciname_goi = config["sci_name"]
@@ -28,7 +30,7 @@ rule all:
 		expand("{pwd}/kraken.report",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
-		expand("{pwd}/putative_reads_removal.fa",pwd=config["workingdirectory"]),
+		expand("{pwd}/re-assembly_reads.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"]),
 
 rule HMMscan_SSU:
@@ -38,7 +40,7 @@ rule HMMscan_SSU:
 	output:
 		dom = temporary("{workingdirectory}/{shortname}.ProkSSU.domout"),
 		log = temporary("{workingdirectory}/{shortname}.HMMscan.log")
-	threads: 10
+	threads: threads_max
 	conda: "envs/hmmer.yaml"
 	shell:
 		"""
@@ -79,23 +81,24 @@ rule Fetch16SLoci:
 		fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
 		fasta16Smicro = temporary("{workingdirectory}/{shortname}.ProkSSU.reads.microsporidia.fa"),
 		fasta16SLocimicro = temporary("{workingdirectory}/{shortname}.ProkSSU.microsporidia.fa"),
-		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa"
-	log: "{workingdirectory}/{shortname}.cdhit.log"
+		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa",
+		log = temporary("{workingdirectory}/{shortname}.cdhit.log")
 	conda:	"envs/cdhit.yaml"
 	shell:
 		"""
 		seqtk subseq {genome} {input.readslist} > {output.fasta16S}
 		python {scriptdir}/FetchSSUReads.py -i {input.readsinfo} -f {output.fasta16S} -o {output.fasta16SLoci}
-		cd-hit-est -i {output.fasta16SLoci} -o {output.fasta16SLociReduced} -c 0.99 -T 1 -G 0 -aS 1 2> {log}
+		cd-hit-est -i {output.fasta16SLoci} -o {output.fasta16SLociReduced} -c 0.99 -T 1 -G 0 -aS 1 2> {output.log}
 		if [ -s {input.readslistmicro} ]; then
 			seqtk subseq {genome} {input.readslistmicro} > {output.fasta16Smicro}
 			python {scriptdir}/FetchSSUReads.py -i {input.readsinfomicro} -f {output.fasta16Smicro} -o {output.fasta16SLocimicro}
-			cd-hit-est -i {output.fasta16SLocimicro} -o {output.fasta16SLociReducedmicro} -c 0.99 -T 1 -G 0 -aS 1 2> {log}
+			cd-hit-est -i {output.fasta16SLocimicro} -o {output.fasta16SLociReducedmicro} -c 0.99 -T 1 -G 0 -aS 1 2> {output.log}
 		else
 			touch {output.fasta16Smicro}
 			touch {output.fasta16SLocimicro}
 			touch {output.fasta16SLociReducedmicro}
 		fi
+		rm {pwd}/*clstr
 		"""
 
 rule DownloadSILVA:
@@ -260,18 +263,18 @@ rule ClassifySSU:
 		SILVA_output_ltp = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.ltp.csv"),
 		SILVA_output = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.csv",
 		SILVA_tax = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax",
-		blastout = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt",
+		blastout = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt"),
 		blastgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.genus.txt",
 		aclist = temporary("{workingdirectory}/{shortname}.ProkSSU.acari.list.txt"),
 		fastaAcari = "{workingdirectory}/{shortname}.ProkSSU.acari.fa",
-		blastacari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.blast.txt",
+		blastacari = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.acari.blast.txt"),
 		blastgenusAcari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.genus.txt",
 		SILVA16Sgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.genus.txt"
 	params:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
 	conda: "envs/sina.yaml"
-	threads: 10
+	threads: threads_max
 	shell:
 		"""
 		sina -i {input.fasta16SLociReduced} -o {output.SILVA_output_embl} --db {datadir}/silva/SILVA_SSURef.arb --search --search-min-sim 0.9 -p {threads} --lca-fields tax_embl_ebi_ena --outtype csv --lca-quorum 0.8 --search-max-result 20
@@ -306,7 +309,7 @@ rule MapAllReads2Assembly:
 		paffile = temporary("{workingdirectory}/AllReadsGenome.paf"),
 		mapping = temporary("{workingdirectory}/AllReadsGenome.ctgs"),
 		reads = temporary("{workingdirectory}/AllReadsGenome.reads")
-	threads: 10
+	threads: threads_max
 	conda: "envs/minimap.yaml"
 	shell:
 		"""
@@ -539,7 +542,7 @@ rule CreateKrakenDB:
 		krakenfasta = "{workingdirectory}/kraken.tax.ffn"
 	output:
 		krakendb = directory("{workingdirectory}/krakendb")
-	threads: 10
+	threads: threads_max
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
@@ -569,7 +572,7 @@ rule RunKraken:
 	output:
 		krakenout = "{workingdirectory}/kraken.output",
 		krakenreport = "{workingdirectory}/kraken.report"
-	threads: 10
+	threads: threads_max
 	conda: "envs/kraken.yaml"
 	shell:
 		"""
@@ -617,7 +620,7 @@ rule Map2Assembly:
 		contiglist = temporary("{workingdirectory}/{genus}/{genus}.ctgs.list"),
 		reads = temporary("{workingdirectory}/{genus}/{genus}.reads"),
 		fasta = temporary("{workingdirectory}/{genus}/{genus}.ctgs.fa")
-	threads: 10
+	threads: threads_max
 	conda: "envs/minimap.yaml"
 	shell:
 		"""
@@ -650,8 +653,7 @@ rule RunBusco:
 		summary = "{workingdirectory}/{genus}/busco/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/busco/done.txt")
 	conda: "envs/busco.yaml"
-	threads:
-		10
+	threads: threads_max
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
@@ -788,7 +790,7 @@ rule Hifiasm:
 		gfa = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.gfa",
 		fasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		fai = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta.fai"
-	threads: 10
+	threads: threads_max
 	conda: "envs/hifiasm.yaml"
 	shell:
 		"""
@@ -832,8 +834,7 @@ rule RunBuscoAssembly:
 		summary = "{workingdirectory}/{genus}/buscoAssembly/summary.txt",
 		completed = temporary("{workingdirectory}/{genus}/buscoAssembly/done.txt"),
 	conda: "envs/busco.yaml"
-	threads:
-		10
+	threads: threads_max
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
@@ -894,14 +895,14 @@ rule Map2AssemblyHifiasm:
 		nucmercontiglist = temporary("{workingdirectory}/{genus}/{genus}.NucmerAssembly.contigs.txt"),
 		contiglist = temporary("{workingdirectory}/{genus}/{genus}.Assembly.contigs.txt"),
 		paffile = temporary("{workingdirectory}/{genus}/{genus}.assembly.paf"),
-		fasta = "{workingdirectory}/{genus}/{genus}.putative_assembly.fa",
+		fasta = "{workingdirectory}/{genus}/{genus}.re-assembly.fa",
 		mapping = temporary("{workingdirectory}/{genus}/{genus}.assembly.ctgs"),
 		reads = temporary("{workingdirectory}/{genus}/{genus}.assembly.reads"),
 		reads_unmapped = temporary("{workingdirectory}/{genus}/{genus}.assembly.unmapped.reads"),
-		readsfasta = "{workingdirectory}/{genus}/{genus}.putative_reads.fa",
+		readsfasta = "{workingdirectory}/{genus}/{genus}.re-assembly_reads.fa",
 		busco_assembly = temporary("{workingdirectory}/{genus}/buscoReadsAssembly.txt"),
 		busco_assembly_hifi = temporary("{workingdirectory}/{genus}/buscoReadsAssemblyHifi.txt")
-	threads: 10
+	threads: threads_max
 	conda: "envs/minimap.yaml"
 	shell:
 		"""
@@ -946,8 +947,7 @@ rule RunBuscoReads:
 		completed = temporary("{workingdirectory}/{genus}/buscoReads/done.txt"),
 		readfile = temporary("{workingdirectory}/{genus}/buscoReads.txt")
 	conda: "envs/busco.yaml"
-	threads:
-		10
+	threads: threads_max
 	shell:
 		"""
 		if [ -s {input.circgenome} ]; then
@@ -1054,13 +1054,13 @@ rule concatenate_reads:
 
 def aggregate_readsets_putative(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
-	return expand ("{workingdirectory}/{genus}/{genus}.putative_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
+	return expand ("{workingdirectory}/{genus}/{genus}.re-assembly_reads.fa", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
 
 rule concatenate_reads_putative:
 	input:
 		aggregate_readsets_putative
 	output:
-		"{workingdirectory}/putative_reads_removal.fa"
+		"{workingdirectory}/re-assembly_reads.fa"
 	shell:
 		"""
 		if [ -n "{input}" ]
@@ -1087,7 +1087,7 @@ rule create_report:
 	input:
 		finalrem = "{workingdirectory}/final_reads_removal.fa",
 		krakenout = "{workingdirectory}/kraken.output",
-		putrem = "{workingdirectory}/putative_reads_removal.fa",
+		putrem = "{workingdirectory}/re-assembly_reads.fa",
 		figs = "{workingdirectory}/figures_done.txt",
 		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
 		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
