@@ -112,7 +112,7 @@ P-->N(Report)
 10. All reads are mapped to the draft assembly: AllReadsGenome.paf
 
 
-The following part of the pipeline will be done very every detected family based on the composition of the sample.
+The following part of the pipeline will be done for every detected family based on the composition of the sample.
 
 1. Reads are extracted per bin. {family}/kraken.fa
 2. Kraken reads are mapped to draft assembly. Fully aligned contigs {family}/{family}.ctgs
@@ -125,7 +125,7 @@ Moreover, also a re-assembly is done.
 2. Assembly is done using hifiasm: {family}/hifiasm/
 3. Busco is run twice, both on the reads as on the novel assembly: {family}/buscoReads and {family}/buscoAssembly
 4. Nucmer against re-assembled contigs: {family}/{family}\_vs_hifiasm.overview.txt
-5. Map reads to re-assembled contigs: {family}/{family}.putative_reads.fa --> concatenated across families in putative_reads_removal.fa
+5. Map reads to re-assembled contigs: {family}/{family}.re-assembly_reads.fa --> concatenated across families in re-assembly_reads.fa
 7. Draw circos plot
 
 
