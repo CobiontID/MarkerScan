@@ -98,7 +98,6 @@ rule Fetch16SLoci:
 			touch {output.fasta16SLocimicro}
 			touch {output.fasta16SLociReducedmicro}
 		fi
-		rm {pwd}/*clstr
 		"""
 
 rule DownloadSILVA:

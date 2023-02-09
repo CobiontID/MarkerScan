@@ -244,7 +244,7 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
     pdf.set_font("Arial", "U", size=10)
     pdf.cell(200, 6, txt="Hifiasm assembly", ln=1, align="L")
     pdf.set_font("Arial", size=10)
-    buscocontigs_asm= wd + '/' + genusname + '/' + genusname + '.putative_assembly.fa'
+    buscocontigs_asm= wd + '/' + genusname + '/' + genusname + '.re-assembly.fa'
     buscocontigs=[]
     l=open(buscocontigs_asm,'r')
     for line in l:
@@ -286,7 +286,7 @@ for filename in glob.glob(wd+'/*/kraken.reads'):
             reportdict['Families'][genusname]['Busco_Re-Assembly']=line
     k.close()
 
-    putreadids=wd+'/'+genusname+'/'+genusname+'.putative_reads.fa'
+    putreadids=wd+'/'+genusname+'/'+genusname+'.re-assembly_reads.fa'
     num_lines_put=0
     k=open(putreadids,'r')
     for line in k:
