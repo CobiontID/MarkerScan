@@ -24,8 +24,8 @@ pwd=config["workingdirectory"]
 
 rule all:
 	input:
-		expand("{pwd}/{name}.ProkSSU.reduced.fa",pwd=config["workingdirectory"], name=config["shortname"]),
-		expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),		
+		expand("{pwd}/{name}.SSU.reduced.fa",pwd=config["workingdirectory"], name=config["shortname"]),
+		expand("{pwd}/{name}.SSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),		
 		expand("{pwd}/kraken.tax.masked.ffn",pwd=config["workingdirectory"]),
 		expand("{pwd}/kraken.report",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
@@ -38,7 +38,7 @@ rule HMMscan_SSU:
 	Run HMMscan with prokaryotic+viral HMM (RF00177+RF01959)
 	"""
 	output:
-		dom = temporary("{workingdirectory}/{shortname}.ProkSSU.domout"),
+		dom = temporary("{workingdirectory}/{shortname}.SSU.domout"),
 		log = temporary("{workingdirectory}/{shortname}.HMMscan.log")
 	threads: threads_max
 	conda: "envs/hmmer.yaml"
@@ -52,12 +52,12 @@ rule FetchHMMReads:
 	Fetch detected reads with prokaryotic 16S signature
 	"""
 	input:
-		dom = "{workingdirectory}/{shortname}.ProkSSU.domout"
+		dom = "{workingdirectory}/{shortname}.SSU.domout"
 	output:
-		readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
-		readsinfomicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readsinfo",
-		readslist = temporary("{workingdirectory}/{shortname}.ProkSSU.readslist"),
-		readslistmicro = temporary("{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist")
+		readsinfo = "{workingdirectory}/{shortname}.SSU.readsinfo",
+		readsinfomicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readsinfo",
+		readslist = temporary("{workingdirectory}/{shortname}.SSU.readslist"),
+		readslistmicro = temporary("{workingdirectory}/{shortname}.SSU.microsporidia.readslist")
 	shell:
 		"""
 		python {scriptdir}/GetReadsSSU_nhmmscan.py -i {input.dom} | grep -v 'RF02542.afa' > {output.readsinfo} || true
@@ -71,17 +71,17 @@ rule Fetch16SLoci:
 	Get fasta sequences for detected reads with prokaryotic 16S signature and extract 16S locus
 	"""
 	input:
-		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
-		readsinfo = "{workingdirectory}/{shortname}.ProkSSU.readsinfo",
-		readsinfomicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readsinfo",
-		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
+		readslist = "{workingdirectory}/{shortname}.SSU.readslist",
+		readsinfo = "{workingdirectory}/{shortname}.SSU.readsinfo",
+		readsinfomicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readsinfo",
+		readslistmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readslist"
 	output:
-		fasta16S = temporary("{workingdirectory}/{shortname}.ProkSSU.reads.fa"),
-		fasta16SLoci = temporary("{workingdirectory}/{shortname}.ProkSSU.fa"),
-		fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
-		fasta16Smicro = temporary("{workingdirectory}/{shortname}.ProkSSU.reads.microsporidia.fa"),
-		fasta16SLocimicro = temporary("{workingdirectory}/{shortname}.ProkSSU.microsporidia.fa"),
-		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa",
+		fasta16S = temporary("{workingdirectory}/{shortname}.SSU.reads.fa"),
+		fasta16SLoci = temporary("{workingdirectory}/{shortname}.SSU.fa"),
+		fasta16SLociReduced = "{workingdirectory}/{shortname}.SSU.reduced.fa",
+		fasta16Smicro = temporary("{workingdirectory}/{shortname}.SSU.reads.microsporidia.fa"),
+		fasta16SLocimicro = temporary("{workingdirectory}/{shortname}.SSU.microsporidia.fa"),
+		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.reduced.fa",
 		log = temporary("{workingdirectory}/{shortname}.cdhit.log")
 	conda:	"envs/cdhit.yaml"
 	shell:
@@ -252,23 +252,23 @@ rule ClassifySSU:
 	Classify all extracted (and reduced) 16S loci using SILVA DB to determine genera present
 	"""
 	input:
-		fasta16SLociReduced = "{workingdirectory}/{shortname}.ProkSSU.reduced.fa",
-		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.reduced.fa",
+		fasta16SLociReduced = "{workingdirectory}/{shortname}.SSU.reduced.fa",
+		fasta16SLociReducedmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.reduced.fa",
 		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 		donesilva = "{workingdirectory}/silva_download.done.txt"
 	output:
-		SILVA_output_embl = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.embl.csv"),
-		SILVA_output_silva = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.silva.csv"),
-		SILVA_output_ltp = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.ltp.csv"),
-		SILVA_output = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.csv",
-		SILVA_tax = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.tax",
-		blastout = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.blast.txt"),
-		blastgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.microsporidia.genus.txt",
-		aclist = temporary("{workingdirectory}/{shortname}.ProkSSU.acari.list.txt"),
-		fastaAcari = "{workingdirectory}/{shortname}.ProkSSU.acari.fa",
-		blastacari = temporary("{workingdirectory}/{shortname}.ProkSSU.reduced.acari.blast.txt"),
-		blastgenusAcari = "{workingdirectory}/{shortname}.ProkSSU.reduced.acari.genus.txt",
-		SILVA16Sgenus = "{workingdirectory}/{shortname}.ProkSSU.reduced.SILVA.genus.txt"
+		SILVA_output_embl = temporary("{workingdirectory}/{shortname}.SSU.reduced.SILVA.embl.csv"),
+		SILVA_output_silva = temporary("{workingdirectory}/{shortname}.SSU.reduced.SILVA.silva.csv"),
+		SILVA_output_ltp = temporary("{workingdirectory}/{shortname}.SSU.reduced.SILVA.ltp.csv"),
+		SILVA_output = "{workingdirectory}/{shortname}.SSU.reduced.SILVA.csv",
+		SILVA_tax = "{workingdirectory}/{shortname}.SSU.reduced.SILVA.tax",
+		blastout = temporary("{workingdirectory}/{shortname}.SSU.reduced.microsporidia.blast.txt"),
+		blastgenus = "{workingdirectory}/{shortname}.SSU.reduced.microsporidia.genus.txt",
+		aclist = temporary("{workingdirectory}/{shortname}.SSU.acari.list.txt"),
+		fastaAcari = "{workingdirectory}/{shortname}.SSU.acari.fa",
+		blastacari = temporary("{workingdirectory}/{shortname}.SSU.reduced.acari.blast.txt"),
+		blastgenusAcari = "{workingdirectory}/{shortname}.SSU.reduced.acari.genus.txt",
+		SILVA16Sgenus = "{workingdirectory}/{shortname}.SSU.reduced.SILVA.genus.txt"
 	params:
 		taxnames = expand("{datadir}/taxonomy/names.dmp",datadir=config["datadir"]),
 		taxnodes = expand("{datadir}/taxonomy/nodes.dmp",datadir=config["datadir"])
@@ -325,7 +325,7 @@ checkpoint GetGenera:
 	Get genera which were detected in SILVA DB 16 screen
 	"""
 	input:
-		SILVA16Sgenus = expand("{pwd}/{name}.ProkSSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),
+		SILVA16Sgenus = expand("{pwd}/{name}.SSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),
 		donetaxon = "{workingdirectory}/taxdownload.done.txt",
 	output:
 		generadir = directory("{workingdirectory}/genera")
@@ -1088,8 +1088,8 @@ rule create_report:
 		krakenout = "{workingdirectory}/kraken.output",
 		putrem = "{workingdirectory}/re-assembly_reads.fa",
 		figs = "{workingdirectory}/figures_done.txt",
-		readslist = "{workingdirectory}/{shortname}.ProkSSU.readslist",
-		readslistmicro = "{workingdirectory}/{shortname}.ProkSSU.microsporidia.readslist"
+		readslist = "{workingdirectory}/{shortname}.SSU.readslist",
+		readslistmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readslist"
 	params:
 		datadir = expand("{datadir}/genera/",datadir=config["datadir"])
 	output:

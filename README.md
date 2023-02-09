@@ -100,9 +100,9 @@ P-->N(Report)
 4. Download NCBI taxonomy (both names.dmp / nodes.dmp and nucl_wgs.accession2taxid/nucl_gb.accession2taxid) (re-run, when older than 180 days)
 
 ### Workflow steps
-1. Run nhmmer with SSU_Prok_Euk_Microsporidia.hmm across the assembly and coordinates of matches can be found in {shortname}.ProkSSU.readsinfo
-2. The SSU loci are extracted and collapsed with 99% nucleotide identity and stored in {shortname}.ProkSSU.reduced.fa
-3. Classify SSU regions using SILVA. Taxonomy per sequence is found in {shortname}.ProkSSU.reduced.SILVA.tax
+1. Run nhmmer with SSU_Prok_Euk_Microsporidia.hmm across the assembly and coordinates of matches can be found in {shortname}.SSU.readsinfo
+2. The SSU loci are extracted and collapsed with 99% nucleotide identity and stored in {shortname}.SSU.reduced.fa
+3. Classify SSU regions using SILVA. Taxonomy per sequence is found in {shortname}.SSU.reduced.SILVA.tax
 4. Determine the species composition of sample and for which families the procedure continues, output in {workingdirectory}/genera
 5. Download genomes for the closest relatives of the target species available. Next, this fasta file is split and masked using duskmasker. Outputfile: relatives/kraken.relatives.masked.ffn.
 6. Download all available genomes (refseq if bacterial, all if eukaryotic) for the detected families and store in {datadir}/genera (re-run, when older than 180 days).

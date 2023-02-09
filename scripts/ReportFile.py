@@ -83,7 +83,7 @@ pdf.cell(200, 6, txt=ctgstringfinal, ln=1, align="L")
 #o.write("\nThese loci are annotated as:\n")
 pdf.cell(200, 6,ln=1, align="L")
 pdf.cell(200, 6, txt="These loci are annotated as:", ln=1, align="L")
-annotated=wd+'/'+shortname+'.ProkSSU.reduced.SILVA.genus.txt'
+annotated=wd+'/'+shortname+'.SSU.reduced.SILVA.genus.txt'
 #specieslist=[]
 k=open(annotated,'r')
 for line in k:
@@ -95,7 +95,7 @@ k.close()
 #reportdict['SpeciesPresent']=specieslist
 
 reportdict['SpeciesPresent']={}
-annotated2=wd+'/'+shortname+'.ProkSSU.reduced.SILVA.tax'
+annotated2=wd+'/'+shortname+'.SSU.reduced.SILVA.tax'
 k=open(annotated2,'r')
 for line in k:
     line=line.strip()
@@ -109,7 +109,7 @@ for line in k:
         reportdict['SpeciesPresent'][ctgname][type]=tax
 k.close()
 
-annotated3=wd+'/'+shortname+'.ProkSSU.reduced.fa.clstr'
+annotated3=wd+'/'+shortname+'.SSU.reduced.fa.clstr'
 clusterctgs=[]
 k=open(annotated3,'r')
 for line in k:
