@@ -897,6 +897,7 @@ rule Map2AssemblyHifiasm:
 		fasta = "{workingdirectory}/{genus}/{genus}.re-assembly.fa",
 		mapping = temporary("{workingdirectory}/{genus}/{genus}.assembly.ctgs"),
 		reads = temporary("{workingdirectory}/{genus}/{genus}.assembly.reads"),
+		reads_mapped = temporary("{workingdirectory}/{genus}/{genus}.assembly.mapped.reads"),
 		readsfasta = "{workingdirectory}/{genus}/{genus}.re-assembly_reads.fa",
 	threads: threads_max
 	conda: "envs/minimap.yaml"
@@ -914,7 +915,8 @@ rule Map2AssemblyHifiasm:
 		seqtk subseq {input.assemblyfasta} {output.contiglist} > {output.fasta}
 		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
-		seqtk subseq {input.krakenfa} {output.reads} > {output.readsfasta}
+		cut -f2 {output.reads} | sort | uniq > {output.reads_mapped}
+		seqtk subseq {input.krakenfa} {output.reads_mapped} > {output.readsfasta}
 		"""
 
 rule RunBuscoReads:
