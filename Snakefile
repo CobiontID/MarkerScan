@@ -897,10 +897,7 @@ rule Map2AssemblyHifiasm:
 		fasta = "{workingdirectory}/{genus}/{genus}.re-assembly.fa",
 		mapping = temporary("{workingdirectory}/{genus}/{genus}.assembly.ctgs"),
 		reads = temporary("{workingdirectory}/{genus}/{genus}.assembly.reads"),
-		reads_unmapped = temporary("{workingdirectory}/{genus}/{genus}.assembly.unmapped.reads"),
 		readsfasta = "{workingdirectory}/{genus}/{genus}.re-assembly_reads.fa",
-		busco_assembly = temporary("{workingdirectory}/{genus}/buscoReadsAssembly.txt"),
-		busco_assembly_hifi = temporary("{workingdirectory}/{genus}/buscoReadsAssemblyHifi.txt")
 	threads: threads_max
 	conda: "envs/minimap.yaml"
 	shell:
@@ -917,10 +914,7 @@ rule Map2AssemblyHifiasm:
 		seqtk subseq {input.assemblyfasta} {output.contiglist} > {output.fasta}
 		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
-		comm -12 <(sort {input.unmapped}) <(cut -f2 {output.reads} | tr ',' '\n' | sort | uniq) > {output.reads_unmapped}
-		comm -12 <(sort {input.unmapped}) <(sort {input.readfile}) > {output.busco_assembly}
-		cat {output.reads_unmapped} {output.busco_assembly} | sort | uniq > {output.busco_assembly_hifi}
-		seqtk subseq {input.krakenfa} {output.busco_assembly_hifi} > {output.readsfasta}
+		seqtk subseq {input.krakenfa} {output.reads} > {output.readsfasta}
 		"""
 
 rule RunBuscoReads:
