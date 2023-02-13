@@ -1,6 +1,5 @@
 my_envs = ['busco.yaml',
            'cdhit.yaml',
-           'circos.yaml',
            'dataset.yaml',
            'eutils.yaml',
            'fpdf.yaml',

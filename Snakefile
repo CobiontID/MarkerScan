@@ -971,47 +971,6 @@ rule RunBuscoReads:
 		fi
 		touch {output.completed}
 		"""
-
-rule DrawCircos:
-	"""
-	Draw circos plot of re-assembly
-	"""
-	input:
-		assemblyfasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
-		contiglist = "{workingdirectory}/{genus}/{genus}.Assembly.contigs.txt",
-		completed = "{workingdirectory}/{genus}/buscoAssembly/done.txt"
-	params:
-		dirname = "{workingdirectory}/{genus}/"
-	output:
-		karyo = temporary("{workingdirectory}/{genus}/circos.karyo"),
-		cdsfile = temporary("{workingdirectory}/{genus}/busco.cds.dat"),
-		linkfile = temporary("{workingdirectory}/{genus}/links.dat"),
-		conffile = "{workingdirectory}/{genus}/circos.conf",
-		figure = "{workingdirectory}/{genus}/circos.png"
-	conda: "envs/circos.yaml"
-	shell:
-		"""
-		if [ -s {input.contiglist} ]; then
-			linecount=$(wc -l < {input.contiglist})
-			if [ $linecount -le 200 ]; then
-				python {scriptdir}/input_circos.py -f {input.assemblyfasta} -c {input.contiglist} -b {input.completed} -k {output.karyo} -d {output.cdsfile} -l {output.linkfile}
-				python {scriptdir}/config_circos.py -k {output.karyo} -d {output.cdsfile} -l {output.linkfile} > {output.conffile}
-				circos -conf {output.conffile} -outputdir {params.dirname}
-			else
-				touch {output.karyo}
-				touch {output.cdsfile}
-				touch {output.linkfile}
-				touch {output.conffile}
-				touch {output.figure}
-			fi
-		else
-			touch {output.karyo}
-			touch {output.cdsfile}
-			touch {output.linkfile}
-			touch {output.conffile}
-			touch {output.figure}
-		fi
-		"""
 		
 def aggregate_assemblies(wildcards):
 	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
@@ -1070,24 +1029,11 @@ rule concatenate_reads_putative:
 		fi
 		"""
 
-def aggregate_figures(wildcards):
-	checkpoint_output=checkpoints.GetGenera.get(**wildcards).output[0]
-	return expand ("{workingdirectory}/{genus}/circos.png", workingdirectory=config["workingdirectory"], genus=glob_wildcards(os.path.join(checkpoint_output, 'genus.{genus}.txt')).genus)
-
-rule concatenate_figures:
-	input:
-		aggregate_figures
-	output:
-		temporary("{workingdirectory}/figures_done.txt")
-	shell:
-		"touch {output}"
-
 rule create_report:
 	input:
 		finalrem = "{workingdirectory}/final_reads_removal.fa",
 		krakenout = "{workingdirectory}/kraken.output",
 		putrem = "{workingdirectory}/re-assembly_reads.fa",
-		figs = "{workingdirectory}/figures_done.txt",
 		readslist = "{workingdirectory}/{shortname}.SSU.readslist",
 		readslistmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readslist"
 	params:

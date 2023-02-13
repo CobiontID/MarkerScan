@@ -126,7 +126,5 @@ Moreover, also a re-assembly is done.
 3. Busco is run twice, both on the reads as on the novel assembly: {family}/buscoReads and {family}/buscoAssembly
 4. Nucmer against re-assembled contigs: {family}/{family}\_vs_hifiasm.overview.txt
 5. Map reads to re-assembled contigs: {family}/{family}.re-assembly_reads.fa --> concatenated across families in re-assembly_reads.fa
-7. Draw circos plot
-
 
 Combine all results and generate report file {shortname}.report.pdf and {shortname}.json.
