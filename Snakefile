@@ -1031,7 +1031,8 @@ rule create_report:
 		krakenout = "{workingdirectory}/kraken.output",
 		putrem = "{workingdirectory}/re-assembly_reads.fa",
 		readslist = "{workingdirectory}/{shortname}.SSU.readslist",
-		readslistmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readslist"
+		readslistmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readslist",
+		fams = "{workingdirectory}/kraken.tax.masked.ffn"
 	params:
 		datadir = expand("{datadir}/genera/",datadir=config["datadir"])
 	output:
@@ -1041,4 +1042,5 @@ rule create_report:
 		"""
 		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem} -d {params.datadir} -l {input.readslist} -lm {input.readslistmicro}
 		gzip {input.krakenout}
+		gzip {input.fams}
 		"""
