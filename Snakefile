@@ -915,7 +915,7 @@ rule Map2AssemblyHifiasm:
 		seqtk subseq {input.assemblyfasta} {output.contiglist} > {output.fasta}
 		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
-		cut -f2 {output.reads} | sort | uniq > {output.reads_mapped}
+		cut -f2 {output.reads} | tr ',' '\n' | sort | uniq > {output.reads_mapped}
 		seqtk subseq {input.krakenfa} {output.reads_mapped} > {output.readsfasta}
 		"""
 
