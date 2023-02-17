@@ -108,13 +108,13 @@ rule DownloadSILVA:
 		donesilva = temporary("{workingdirectory}/silva_download.done.txt")
 	shell:
 		"""
+		if [ ! -d {datadir}/silva ]; then
+  			mkdir {datadir}/silva
+		fi
 		var=$(curl -L https://ftp.arb-silva.de/current/ARB_files/ | grep 'SSURef_opt.arb.gz.md5' | cut -f2 -d '\"')
 		curl -R https://ftp.arb-silva.de/current/ARB_files/$var --output {datadir}/silva/$var
 		filename=$(basename $var .md5)
 		filenameshort=$(basename $filename .gz)
-		if [ ! -d {datadir}/silva ]; then
-  			mkdir {datadir}/silva
-		fi
 		if [ -f {datadir}/silva/SILVA_SSURef.arb ]; then
 			if [ {datadir}/silva/$var -nt {datadir}/silva/SILVA_SSURef.arb ]; then
 				curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
