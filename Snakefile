@@ -220,7 +220,7 @@ rule DownloadNCBITaxonomy:
 	Download current version of NCBI taxonomy
 	"""
 	input:
-		taxdir = expand("{datadir}/taxonomy/",datadir=config["datadir"]),
+		taxdir = expand("{datadir}",datadir=config["datadir"]),
 	output:
 		donefile = temporary("{workingdirectory}/taxdownload.done.txt")
 	shell:
@@ -234,14 +234,14 @@ rule DownloadNCBITaxonomy:
 			timestampdate=$(date -d $timestamp +%s)
 		fi
         if [ ! -s {datadir}/taxonomy/names.dmp ] || [ $before -ge $timestampdate ]; then
-			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz.md5 --output {input.taxdir}/taxdump.tar.gz.md5
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz.md5 --output {input.taxdir}/taxonomy/taxdump.tar.gz.md5
 			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz --output taxdump.tar.gz
-			tar -C {input.taxdir} -xzf taxdump.tar.gz names.dmp nodes.dmp
-			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz.md5 --output {input.taxdir}/nucl_gb.accession2taxid.gz.md5
+			tar -C {input.taxdir}/taxonomy/ -xzf taxdump.tar.gz names.dmp nodes.dmp
+			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz.md5 --output {input.taxdir}/taxonomy/nucl_gb.accession2taxid.gz.md5
 			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz --output nucl_gb.accession2taxid.gz
 			curl -R https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz --output nucl_wgs.accession2taxid.gz
-			gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/nucl_gb.accession2taxid
-			gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/nucl_wgs.accession2taxid
+			gzip -dc nucl_gb.accession2taxid.gz > {input.taxdir}/taxonomy/nucl_gb.accession2taxid
+			gzip -dc nucl_wgs.accession2taxid.gz > {input.taxdir}/taxonomy/nucl_wgs.accession2taxid
 			rm nucl_gb.accession2taxid.gz nucl_wgs.accession2taxid.gz taxdump.tar.gz
 		fi
 		touch {output.donefile}
@@ -1043,4 +1043,5 @@ rule create_report:
 		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem} -d {params.datadir} -l {input.readslist} -lm {input.readslistmicro}
 		gzip {input.krakenout}
 		gzip {input.fams}
+		###gzip all fasta files
 		"""
