@@ -28,7 +28,7 @@ rule all:
 		expand("{pwd}/{name}.SSU.reduced.SILVA.genus.txt",pwd=config["workingdirectory"], name=config["shortname"]),		
 		expand("{pwd}/kraken.tax.masked.ffn",pwd=config["workingdirectory"]),
 		expand("{pwd}/kraken.report",pwd=config["workingdirectory"]),
-		expand("{pwd}/final_assembly.fa",pwd=config["workingdirectory"]),
+		expand("{pwd}/final_assembly.fa.gz",pwd=config["workingdirectory"]),
 		expand("{pwd}/final_reads_removal.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/re-assembly_reads.fa",pwd=config["workingdirectory"]),
 		expand("{pwd}/{name}.report.pdf",pwd=config["workingdirectory"], name=config["shortname"]),
@@ -111,17 +111,28 @@ rule DownloadSILVA:
 		if [ ! -d {datadir}/silva ]; then
   			mkdir {datadir}/silva
 		fi
-		var=$(curl -L https://ftp.arb-silva.de/current/ARB_files/ | grep 'SSURef_opt.arb.gz.md5' | cut -f2 -d '\"')
-		curl -R https://ftp.arb-silva.de/current/ARB_files/$var --output {datadir}/silva/$var
-		filename=$(basename $var .md5)
-		filenameshort=$(basename $filename .gz)
 		if [ -f {datadir}/silva/SILVA_SSURef.arb ]; then
-			if [ {datadir}/silva/$var -nt {datadir}/silva/SILVA_SSURef.arb ]; then
-				curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
-				gunzip {datadir}/silva/$filename
-				mv {datadir}/silva/$filenameshort {datadir}/silva/SILVA_SSURef.arb
+			before=$(date -d 'today - 1000 days' +%s)
+			timestamp=$(stat -c %y {datadir}/silva/SILVA_SSURef.arb | cut -f1 -d ' ')
+			timestampdate=$(date -d $timestamp +%s)
+			echo $before
+			echo $timestampdate
+			if [ $before -ge $timestampdate ]; then
+				var=$(curl -L https://ftp.arb-silva.de/current/ARB_files/ | grep 'SSURef_opt.arb.gz.md5' | cut -f2 -d '\"')
+				curl -R https://ftp.arb-silva.de/current/ARB_files/$var --output {datadir}/silva/$var
+				filename=$(basename $var .md5)
+				filenameshort=$(basename $filename .gz)
+				if [ {datadir}/silva/$var -nt {datadir}/silva/SILVA_SSURef.arb ]; then
+					curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
+					gunzip {datadir}/silva/$filename
+					mv {datadir}/silva/$filenameshort {datadir}/silva/SILVA_SSURef.arb
+				fi
 			fi
 		else
+			var=$(curl -L https://ftp.arb-silva.de/current/ARB_files/ | grep 'SSURef_opt.arb.gz.md5' | cut -f2 -d '\"')
+			curl -R https://ftp.arb-silva.de/current/ARB_files/$var --output {datadir}/silva/$var
+			filename=$(basename $var .md5)
+			filenameshort=$(basename $filename .gz)
 			curl -R https://ftp.arb-silva.de/current/ARB_files/$filename --output {datadir}/silva/$filename
 			gunzip {datadir}/silva/$filename
 			mv {datadir}/silva/$filenameshort {datadir}/silva/SILVA_SSURef.arb
@@ -303,7 +314,7 @@ rule ClassifySSU:
 
 rule MapAllReads2Assembly:
 	input:
-		krakenffnall = "{workingdirectory}/kraken.tax.ffn"
+		krakenffnall = "{workingdirectory}/kraken.tax.masked.ffn"
 	output:
 		paffile = temporary("{workingdirectory}/AllReadsGenome.paf"),
 		mapping = temporary("{workingdirectory}/AllReadsGenome.ctgs"),
@@ -947,15 +958,19 @@ rule RunBuscoReads:
 		"""
 		if [ -s {input.circgenome} ]; then
 			linecount=$(grep -c '>' < {input.circgenome})
-			python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
-			busco --list-datasets > {output.buscodbs}
-			python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
-			busco --config {output.buscoini} -f || true
-			mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
-			mv {params.buscodir}/busco/run*/short_summary.txt {output.summary}
-			rm -r {params.buscodir}/busco/
-			touch {output.completed}
-			python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
+			if [ $linecount -le 100000 ]; then
+				python {scriptdir}/RenameFastaHeader.py -i {input.circgenome} -o {output.convtable} > {output.renamedfa}
+				busco --list-datasets > {output.buscodbs}
+				python {scriptdir}/BuscoConfig.py -na {params.taxnames} -no {params.taxnodes} -f {output.renamedfa} -d {params.buscodir} -dl {datadir}/busco_data/ -c {threads} -db {output.buscodbs} -o {output.buscoini}
+				busco --config {output.buscoini} -f || true
+				mv {params.buscodir}/busco/run*/full_table.tsv {output.table}
+				mv {params.buscodir}/busco/run*/short_summary.txt {output.summary}
+				rm -r {params.buscodir}/busco/
+				touch {output.completed}
+				python {scriptdir}/ParseBuscoTableMappingRead.py -d {output.completed} -c {output.convtable} -o {output.readfile}
+			else
+				touch {output.renamedfa} {output.convtable} {output.buscodbs} {output.buscoini} {output.readfile} {output.table} {output.summary}
+			fi
 		else 
 			touch {output.renamedfa}
 			touch {output.convtable}
@@ -976,12 +991,12 @@ rule concatenate_asm:
 	input:
 		aggregate_assemblies
 	output:
-		"{workingdirectory}/final_assembly.fa"
+		"{workingdirectory}/final_assembly.fa.gz"
 	shell:
 		"""
 		if [ -n "{input}" ]
 		then
-			cat {input} > {output}
+			cat {input} | gzip > {output}
 		else
 			touch {output}
 		fi
@@ -1034,6 +1049,7 @@ rule create_report:
 		readslistmicro = "{workingdirectory}/{shortname}.SSU.microsporidia.readslist",
 		fams = "{workingdirectory}/kraken.tax.masked.ffn"
 	params:
+		workdir = directory("{workingdirectory}"),
 		datadir = expand("{datadir}/genera/",datadir=config["datadir"])
 	output:
 		rep = "{workingdirectory}/{shortname}.report.pdf"
@@ -1043,5 +1059,7 @@ rule create_report:
 		python {scriptdir}/ReportFile.py -o {output.rep} -r {input.finalrem} -d {params.datadir} -l {input.readslist} -lm {input.readslistmicro}
 		gzip {input.krakenout}
 		gzip {input.fams}
-		###gzip all fasta files
+		gzip {params.workdir}/*/*fa
+		gzip {params.workdir}/*fa
+		rm -r {params.workdir}/krakendb
 		"""
