@@ -2,5 +2,5 @@ name: hifiasm
 channels:
   - bioconda
 dependencies:
-  - hifiasm=0.14
+  - hifiasm=0.19.8
   - pyfaidx
