@@ -324,7 +324,7 @@ rule MapAllReads2Assembly:
 	shell:
 		"""
 		if [ -s {input.krakenffnall} ]; then
-			minimap2 -x map-pb -t {threads} {genome} {reads}  > {output.paffile}
+			minimap2 -x map-hifi -t {threads} {genome} {reads}  > {output.paffile}
 			python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
 		else
 			touch {output.paffile} {output.paffile} {output.reads}
@@ -636,7 +636,7 @@ rule Map2Assembly:
 		"""
 		if [ -s {input.krakenffnall} ]
 		then
-			minimap2 -x map-pb -t {threads} {genome} {input.krakenfa}  > {output.paffile}
+			minimap2 -x map-hifi -t {threads} {genome} {input.krakenfa}  > {output.paffile}
 			python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
 			grep -v 'NOT COMPLETE' {output.mapping} | cut -f1 | sort | uniq > {output.contiglist} || true
 			seqtk subseq {genome} {output.contiglist} > {output.fasta}
@@ -924,7 +924,7 @@ rule Map2AssemblyHifiasm:
 		cut -f1 {output.summary} | sort | uniq | grep -v '^#' > {output.buscocontiglist} || true
 		cat {output.buscocontiglist} {output.nucmercontiglist} | sort | uniq > {output.contiglist}
 		seqtk subseq {input.assemblyfasta} {output.contiglist} > {output.fasta}
-		minimap2 -x map-pb -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
+		minimap2 -x map-hifi -t {threads} {output.fasta} {input.krakenfa}  > {output.paffile}
 		python {scriptdir}/PafAlignment.py -p {output.paffile} -o {output.mapping} -r {output.reads}
 		cut -f2 {output.reads} | tr ',' '\n' | sort | uniq > {output.reads_mapped}
 		seqtk subseq {input.krakenfa} {output.reads_mapped} > {output.readsfasta}
