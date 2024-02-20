@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - hifiasm=0.19.8
-  - pyfaidx
+  - pyfaidx=0.8.1.1
