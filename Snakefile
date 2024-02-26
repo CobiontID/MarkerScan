@@ -797,7 +797,7 @@ rule Hifiasm:
 	output:
 		completed = temporary("{workingdirectory}/{genus}/assembly.done.txt"),
 		dirname = directory("{workingdirectory}/{genus}/hifiasm"),
-		gfa = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.gfa",
+		gfa = "{workingdirectory}/{genus}/hifiasm/hifiasm.bp.p_ctg.gfa",
 		fasta = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta",
 		fai = "{workingdirectory}/{genus}/hifiasm/hifiasm.p_ctg.fasta.fai"
 	threads: threads_max
