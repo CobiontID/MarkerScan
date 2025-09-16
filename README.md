@@ -14,7 +14,7 @@ The prefered way of installation is via the provided singularity container as th
 After installation of singularity, you can pull a docker image of the latest version of the code and convert it into a singularity container:
 
 ```
-singularity pull docker://{repo}/markerscan:{tag}
+singularity pull docker://emvcaest/markerscan:latest
 ```
 
 Next you need to bind all required directories of your local machine (see [Config file](#config-file)) to the image
