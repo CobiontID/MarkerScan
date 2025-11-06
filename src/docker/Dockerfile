@@ -2,7 +2,7 @@ FROM condaforge/miniforge3:24.9.2-0
 
 ENV SHELL=/bin/bash
 
-RUN mamba create -q -y -c conda-forge -c bioconda -n snakemake snakemake=6.10.0 python=3.9.7 singularity \
+RUN mamba create -q -y -c conda-forge -c bioconda -n snakemake snakemake=6.10.0 python=3.9.7 singularity tabulate=0.8.10 \
   && conda clean --all -y
 
 RUN  echo "source activate snakemake" > ~/.bashrc
